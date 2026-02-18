@@ -24,7 +24,6 @@ type UserPrompt = {
 type Prompt = SeedPrompt | UserPrompt;
 
 // —— LocalStorage keys ——————————————————————————————————————
-const STORAGE_USER_KEY = "userPrompts";
 const STORAGE_LANG_KEY = "uiLang";
 
 // —— Seed prompts (bilingual) ————————————————————————————
@@ -147,54 +146,31 @@ const [submittedType, setSubmittedType] = useState<"prompt" | "decree" | null>(n
   
   // —— WebSocket connection for backend communication
   const [fetchedSeedPrompts, setFetchedSeedPrompts] = useState<SeedPrompt[]>([]);
+  const [fetchedUserPrompts, setFetchedUserPrompts] = useState<UserPrompt[]>([]);
   const { error: wsError, send: sendWsCommand } = useWebSocket((response) => {
-    // Handle query responses to fetch seed prompts
+    // Handle query responses to fetch all prompts from backend
     if (response.action === "query" && response.records && Array.isArray(response.records)) {
       const seedRecords = response.records.filter((r: any) => r.source === "seed");
-      const grouped = groupSeedPrompts(seedRecords);
-      setFetchedSeedPrompts(grouped);
+      const userRecords = response.records.filter((r: any) => r.source === "audience" || r.source === "user");
+      
+      const groupedSeeds = groupSeedPrompts(seedRecords);
+      setFetchedSeedPrompts(groupedSeeds);
+      
+      // Map user records to UserPrompt format
+      const mappedUserPrompts: UserPrompt[] = userRecords.map((r: any, idx: number) => ({
+        id: r.id || `user-${idx}`,
+        text: r.text,
+        lang: (r.lang === "en" || r.lang === "de") ? r.lang : "en",
+        source: "user" as const,
+      }));
+      setFetchedUserPrompts(mappedUserPrompts);
     }
   });
 
-  // —— User-added prompts (loaded from localStorage)
-  const [userPrompts, setUserPrompts] = useState<UserPrompt[]>(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_USER_KEY);
-      if (!raw) return [];
-
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-
-      // Basic shape guard (older saved formats are ignored)
-      return parsed
-        .filter(
-          (x: any) =>
-            x && typeof x.id === "string" && typeof x.text === "string",
-        )
-        .map((x: any) => ({
-          id: x.id,
-          text: x.text,
-          lang: x.lang === "de" || x.lang === "en" ? x.lang : "en",
-          source: "user" as const,
-        }));
-    } catch {
-      return [];
-    }
-  });
-
-  // Persist user prompts
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(userPrompts));
-    } catch {
-      // ignore
-    }
-  }, [userPrompts]);
-
-  // —— Combined prompt pool (seed + user)
+  // —— Combined prompt pool (seed + user from backend)
   const allPrompts = useMemo<Prompt[]>(
-    () => [...userPrompts, ...fetchedSeedPrompts],
-    [userPrompts, fetchedSeedPrompts],
+    () => [...fetchedUserPrompts, ...fetchedSeedPrompts],
+    [fetchedUserPrompts, fetchedSeedPrompts],
   );
 
   // —— Visible set on idle screen
@@ -363,16 +339,7 @@ const handleAddDecreeWithModal = (text: string) => {
     const trimmed = text.trim();
     if (trimmed.length === 0) return;
 
-    // Create user prompt for local state (immediate UI feedback)
-    const p: UserPrompt = {
-      id: `user-${Date.now()}`,
-      text: trimmed,
-      lang: uiLang,
-      source: "user",
-    };
-    setUserPrompts((s) => [p, ...s]);
-
-    // Send to backend via WebSocket
+    // Send to backend via WebSocket (no local storage)
     const success = sendWsCommand({
       action: "add",
       text: trimmed,
@@ -383,6 +350,15 @@ const handleAddDecreeWithModal = (text: string) => {
 
     if (!success && wsError) {
       console.error("Failed to send to backend:", wsError);
+    } else {
+      // Re-fetch prompts from backend to get the latest data
+      setTimeout(() => {
+        sendWsCommand({
+          action: "query",
+          query_type: "by_type",
+          filters: { input_type: "prompt", limit: 100 },
+        });
+      }, 500);
     }
 
     // reset flow
