@@ -1,3 +1,4 @@
+import { useWebSocket, type InputLang } from "@/hooks/useWebSocket";
 import { useEffect, useMemo, useRef, useState } from "react";
 import FloatingPrompts from "@/components/FloatingPrompts";
 import PromptScreen from "@/components/PromptScreen";
@@ -27,96 +28,7 @@ const STORAGE_USER_KEY = "userPrompts";
 const STORAGE_LANG_KEY = "uiLang";
 
 // —— Seed prompts (bilingual) ————————————————————————————
-const seedPrompts: SeedPrompt[] = [
-  {
-    id: "seed-1",
-    source: "seed",
-    text: {
-      en: "Which rights feel under threat today?",
-      de: "Welche Rechte fühlen sich heute bedroht an?",
-    },
-  },
-  {
-    id: "seed-2",
-    source: "seed",
-    text: {
-      en: "When is security used to limit freedom?",
-      de: "Wann wird Sicherheit genutzt, um Freiheit einzuschränken?",
-    },
-  },
-  {
-    id: "seed-3",
-    source: "seed",
-    text: {
-      en: "What role do political parties play in a democracy?",
-      de: "Welche Rolle spielen politische Parteien in einer Demokratie?",
-    },
-  },
-  {
-    id: "seed-4",
-    source: "seed",
-    text: {
-      en: "Are human rights universal?",
-      de: "Sind Menschenrechte universell?",
-    },
-  },
-  {
-    id: "seed-5",
-    source: "seed",
-    text: {
-      en: "How often should elections take place?",
-      de: "Wie oft sollten Wahlen stattfinden?",
-    },
-  },
-  {
-    id: "seed-6",
-    source: "seed",
-    text: {
-      en: "What other public offices should be popularly elected?",
-      de: "Welche weiteren öffentlichen Ämter sollten direkt gewählt werden?",
-    },
-  },
-  {
-    id: "seed-7",
-    source: "seed",
-    text: {
-      en: "Do voters have any power between elections?",
-      de: "Haben Wählende zwischen Wahlen überhaupt Einfluss?",
-    },
-  },
-  {
-    id: "seed-8",
-    source: "seed",
-    text: {
-      en: "How can we improve political participation?",
-      de: "Wie können wir politische Teilhabe verbessern?",
-    },
-  },
-  {
-    id: "seed-9",
-    source: "seed",
-    text: {
-      en: "What are the limits of free speech?",
-      de: "Wo liegen die Grenzen der Meinungsfreiheit?",
-    },
-  },
-  {
-    id: "seed-10",
-    source: "seed",
-    text: {
-      en: "How can we better protect minority rights?",
-      de: "Wie können wir Minderheitenrechte besser schützen?",
-    },
-  },
-  {
-    id: "seed-11",
-    source: "seed",
-    text: {
-      en: "What are the main challenges facing democracy today?",
-      de: "Was sind heute die größten Herausforderungen für die Demokratie?",
-    },
-  },
-];
+// Note: Seed prompts are now fetched from the backend via WebSocket
 
 // —— UI labels (bilingual) ————————————————————————————————
 const I18N: Record<Lang, Record<string, string>> = {
@@ -164,6 +76,39 @@ function pickRandom<T>(arr: T[], n: number) {
   return copy.slice(0, Math.min(n, copy.length));
 }
 
+// Group seed records (en/de pairs) into bilingual SeedPrompts
+function groupSeedPrompts(records: any[]): SeedPrompt[] {
+  const grouped = new Map<string, Partial<SeedPrompt>>();
+
+  for (const record of records) {
+    // Look for existing record with same type and opposite language
+    // that we can pair with this one
+    let found = false;
+    for (const prompt of grouped.values()) {
+      if (prompt.text && typeof prompt.text !== 'string') {
+        // Check if we can add this to the existing pair
+        if (!(record.lang in prompt.text)) {
+          prompt.text[record.lang as Lang] = record.text;
+          found = true;
+          break;
+        }
+      }
+    }
+    
+    if (!found) {
+      // Create a new seed prompt with initial language
+      const id = `seed-${Object.keys(Object.fromEntries(grouped)).length}`;
+      grouped.set(id, {
+        id,
+        text: { [record.lang]: record.text } as Record<Lang, string>,
+        source: "seed",
+      });
+    }
+  }
+
+  return Array.from(grouped.values()) as SeedPrompt[];
+}
+
 // —— Main component —————————————————————————————————————————
 export default function FlowApp() {
   // —— UI language toggle (only affects labels + seed prompt language)
@@ -199,7 +144,17 @@ const [submittedType, setSubmittedType] = useState<"prompt" | "decree" | null>(n
   // —— Refresh state (for “new set” + new layout)
   const [refreshKey, setRefreshKey] = useState(0);
   const [lastPickedIds, setLastPickedIds] = useState<Set<string>>(new Set());
-
+  
+  // —— WebSocket connection for backend communication
+  const [fetchedSeedPrompts, setFetchedSeedPrompts] = useState<SeedPrompt[]>([]);
+  const { error: wsError, send: sendWsCommand } = useWebSocket((response) => {
+    // Handle query responses to fetch seed prompts
+    if (response.action === "query" && response.records && Array.isArray(response.records)) {
+      const seedRecords = response.records.filter((r: any) => r.source === "seed");
+      const grouped = groupSeedPrompts(seedRecords);
+      setFetchedSeedPrompts(grouped);
+    }
+  });
 
   // —— User-added prompts (loaded from localStorage)
   const [userPrompts, setUserPrompts] = useState<UserPrompt[]>(() => {
@@ -238,8 +193,8 @@ const [submittedType, setSubmittedType] = useState<"prompt" | "decree" | null>(n
 
   // —— Combined prompt pool (seed + user)
   const allPrompts = useMemo<Prompt[]>(
-    () => [...userPrompts, ...seedPrompts],
-    [userPrompts],
+    () => [...userPrompts, ...fetchedSeedPrompts],
+    [userPrompts, fetchedSeedPrompts],
   );
 
   // —— Visible set on idle screen
@@ -310,6 +265,38 @@ const [submittedType, setSubmittedType] = useState<"prompt" | "decree" | null>(n
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // —— Fetch seed prompts from backend on mount
+  useEffect(() => {
+    // Check if connected before sending
+    let isMounted = true;
+    const attemptFetch = () => {
+      if (!isMounted) return;
+      
+      const success = sendWsCommand({
+        action: "query",
+        query_type: "by_type",
+        filters: { input_type: "prompt", limit: 100 },
+      });
+      
+      if (!success) {
+        console.warn("Seed prompts query failed, retrying...");
+        // Retry after another delay
+        const retryTimer = setTimeout(attemptFetch, 2000);
+        return () => clearTimeout(retryTimer);
+      } else {
+        console.log("Seed prompts query sent successfully");
+      }
+    };
+
+    // Wait for WebSocket to be ready before sending
+    const timer = setTimeout(attemptFetch, 1000);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [sendWsCommand]);
+
   // —— Handlers (navigation + actions)
   // const goBack = () => {
   //   resetInactivityTimer();
@@ -345,26 +332,23 @@ const [submittedType, setSubmittedType] = useState<"prompt" | "decree" | null>(n
   };
 
 const handleAddPromptWithModal = (text: string) => {
-
   setSubmittedType("prompt");
   setShowSubmissionModal(true);
 
   setTimeout(() => {
-      handleAddPrompt(text); // properly call function 
+    handleAddPrompt(text, "prompt");
     setShowSubmissionModal(false);
     setSubmittedType(null);
-    goHome(); // sends back to idle after modal
+    goHome();
   }, 4000);
 };
 
 const handleAddDecreeWithModal = (text: string) => {
-
-
   setSubmittedType("decree");
   setShowSubmissionModal(true);
 
   setTimeout(() => {
-      handleAddPrompt(text); // this is just a placeholder; replace with actual decree handling logic
+    handleAddPrompt(text, "decree");
     setShowSubmissionModal(false);
     setSubmittedType(null);
     goHome();
@@ -373,18 +357,32 @@ const handleAddDecreeWithModal = (text: string) => {
 
 
 
-  const handleAddPrompt = (text: string) => {
+  const handleAddPrompt = (text: string, type: "prompt" | "decree") => {
     resetInactivityTimer();
 
     const trimmed = text.trim();
-    if (trimmed.length > 0) {
-      const p: UserPrompt = {
-        id: `user-${Date.now()}`,
-        text: trimmed,
-        lang: uiLang, // remember UI language at creation time
-        source: "user",
-      };
-      setUserPrompts((s) => [p, ...s]);
+    if (trimmed.length === 0) return;
+
+    // Create user prompt for local state (immediate UI feedback)
+    const p: UserPrompt = {
+      id: `user-${Date.now()}`,
+      text: trimmed,
+      lang: uiLang,
+      source: "user",
+    };
+    setUserPrompts((s) => [p, ...s]);
+
+    // Send to backend via WebSocket
+    const success = sendWsCommand({
+      action: "add",
+      text: trimmed,
+      type,
+      lang: uiLang as InputLang,
+      source: "audience",
+    });
+
+    if (!success && wsError) {
+      console.error("Failed to send to backend:", wsError);
     }
 
     // reset flow
