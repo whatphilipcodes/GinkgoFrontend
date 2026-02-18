@@ -4,33 +4,33 @@ import { Button } from "@/components/ui/button";
 
 export default function FinalScreen({
   uiLang,
-  answer,
-  onLeaveQuestion,
+  // answer,
+  onLeavePrompt,
 
    disabled = false, // ← new
 }: {
   uiLang: "en" | "de";
   answer: string;
-  onLeaveQuestion: (q: string) => void;
+  onLeavePrompt: (p: string) => void;
 
     disabled?: boolean; // ← new
 }) {
-  const [newQ, setNewQ] = useState("");
+  const [newP, setNewP] = useState("");
 
   const I18N = {
     en: {
       title: "Your Input",
-      leave: "Leave a new question for others",
-      placeholder: "Write a question to add to the pile…",
+      leave: "Leave a new prompt for others",
+      placeholder: "Write a prompt to add to the pile…",
       back: "Back",
-      add: "Add Question",
+      add: "Add Prompt",
     },
     de: {
       title: "Deine Eingabe",
-      leave: "Hinterlasse eine neue Frage für andere",
-      placeholder: "Schreibe eine Frage für den Stapel…",
+      leave: "Hinterlasse einen neuen Prompt für andere",
+      placeholder: "Schreibe einen Prompt für den Stapel…",
       back: "Zurück",
-      add: "Frage hinzufügen",
+      add: "Prompt hinzufügen",
     },
   } as const;
 
@@ -48,8 +48,8 @@ export default function FinalScreen({
       <h2 className="text-md font-medium mb-2">{t.leave}</h2>
       <Textarea
         placeholder={t.placeholder}
-        value={newQ}
-        onChange={(e) => setNewQ(e.target.value)}
+        value={newP}
+        onChange={(e) => setNewP(e.target.value)}
         className="min-h-[140px] mb-4"
         disabled={disabled} // ← disable textarea
       />
@@ -57,11 +57,11 @@ export default function FinalScreen({
      
         <Button
           onClick={() => {
-            if (!newQ.trim()) return;
-            onLeaveQuestion(newQ.trim());
-            setNewQ("");
+            if (!newP.trim()) return;
+            onLeavePrompt(newP.trim());
+            setNewP("");
           }}
-          disabled={disabled || !newQ.trim()} // ← disable button if unanswered
+          disabled={disabled || !newP.trim()} // ← disable button if unanswered
         >
           {t.add}
         </Button>

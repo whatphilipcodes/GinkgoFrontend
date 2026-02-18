@@ -2,35 +2,35 @@ import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
-export default function FinalScreen({
+export default function Database({
   uiLang,
-  answer,
-  onLeaveQuestion,
+  // answer,
+  onLeavePrompt,
 
    disabled = false, // ← new
 }: {
   uiLang: "en" | "de";
   answer: string;
-  onLeaveQuestion: (q: string) => void;
+  onLeavePrompt: (d: string) => void;
 
     disabled?: boolean; // ← new
 }) {
-  const [newQ, setNewQ] = useState("");
+  const [newD, setNewD] = useState("");
 
   const I18N = {
     en: {
       title: "Your Input",
-      leave: "Leave a statement that will shape this democracy",
-      placeholder: "Your statement will be used to make up the foudation of this democracy, add wisely",
+      leave: "Leave a decree that will shape this democracy",
+      placeholder: "Your decree will be used to make up the foundation of this democracy, add wisely",
       back: "Back",
-      add: "Add Statement",
+      add: "Add Decree",
     },
     de: {
       title: "Deine Eingabe",
-      leave: "Hinterlasse eine neue Frage für andere",
-      placeholder: "Schreibe eine Frage für den Stapel…",
+      leave: "Hinterlasse ein Dekret für andere",
+      placeholder: "Schreibe ein Dekret für den Stapel…",
       back: "Zurück",
-      add: "Statement hinzufügen",
+      add: "Dekret hinzufügen",
     },
   } as const;
 
@@ -48,8 +48,8 @@ export default function FinalScreen({
       <h2 className="text-md font-medium mb-2">{t.leave}</h2>
       <Textarea
         placeholder={t.placeholder}
-        value={newQ}
-        onChange={(e) => setNewQ(e.target.value)}
+        value={newD}
+        onChange={(e) => setNewD(e.target.value)}
         className="min-h-[140px] mb-4"
         disabled={disabled} // ← disable textarea
       />
@@ -57,11 +57,11 @@ export default function FinalScreen({
        
         <Button
           onClick={() => {
-            if (!newQ.trim()) return;
-            onLeaveQuestion(newQ.trim());
-            setNewQ("");
+            if (!newD.trim()) return;
+            onLeavePrompt(newD.trim());
+            setNewD("");
           }}
-          disabled={disabled || !newQ.trim()} // ← disable button if unanswered
+          disabled={disabled || !newD.trim()} // ← disable button if unanswered
         >
           {t.add}
         </Button>

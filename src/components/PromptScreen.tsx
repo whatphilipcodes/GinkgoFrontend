@@ -5,15 +5,15 @@ import { AnimatePresence, motion } from "framer-motion";
 
 type Phase = "form" | "send";
 
-export default function QuestionScreen({
+export default function PromptScreen({
   uiLang,
-  question,
+  prompt,
   //  hasAnswered = false, // default false
   onSubmit,
   onBack,
 }: {
   uiLang: "en" | "de";
-  question?: { id: string; text: string } | null;
+  prompt?: { id: string; text: string } | null;
     hasAnswered?: boolean; // ← add this
   onSubmit: (answer: string) => void;
   onBack: () => void;
@@ -34,7 +34,7 @@ export default function QuestionScreen({
   const I18N = {
     en: {
       shareTitle: "Share your voice",
-      shareHint: "Share your thoughts below. Once you have contributed to this democracy you will be able to leave a question for other participants or add a statement that will shape this democracy.",
+      shareHint: "Share your thoughts below. Once you have contributed to this democracy you will be able to leave a prompt for other participants or add a decree that will shape this democracy.",
       placeholder: "I think…",
       back: "Back",
       submit: "Submit",
@@ -76,7 +76,7 @@ export default function QuestionScreen({
           >
             <div className="w-full max-w-2xl mt-8 text-center">
               <h1 className="text-3xl font-semibold mb-2">
-                {question?.text ?? t.shareTitle}
+                {prompt?.text ?? t.shareTitle}
               </h1>
               <p className="text-sm text-neutral-400 mb-6">{t.shareHint}</p>
 

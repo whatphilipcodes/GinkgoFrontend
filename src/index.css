@@ -122,9 +122,9 @@
   }
 }
 
-/* Floating question animation and styles */
+/* Floating prompt animation and styles */
 @layer components {
-  .floating-question {
+  .floating-prompt {
     transform: translate3d(0, 0, 0);
     animation-name: floaty;
     animation-iteration-count: infinite;

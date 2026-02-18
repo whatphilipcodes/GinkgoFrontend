@@ -1,33 +1,33 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import FloatingQuestions from "@/components/FloatingQuestions";
-import QuestionScreen from "@/components/QuestionScreen";
+import FloatingPrompts from "@/components/FloatingPrompts";
+import PromptScreen from "@/components/PromptScreen";
 import FinalScreen from "@/components/FinalScreen";
 import Database from "@/components/Database";
 
 // —— Types ————————————————————————————————————————————————
 type Lang = "en" | "de";
 
-type SeedQ = {
+type SeedPrompt = {
   id: string;
   text: Record<Lang, string>; // translated seed text
   source: "seed";
 };
 
-type UserQ = {
+type UserPrompt = {
   id: string;
   text: string; // user input text as-is
   lang: Lang; // language UI was set to when created
   source: "user";
 };
 
-type Q = SeedQ | UserQ;
+type Prompt = SeedPrompt | UserPrompt;
 
 // —— LocalStorage keys ——————————————————————————————————————
-const STORAGE_USER_KEY = "userQuestions";
+const STORAGE_USER_KEY = "userPrompts";
 const STORAGE_LANG_KEY = "uiLang";
 
-// —— Seed questions (bilingual) ————————————————————————————
-const seedQuestions: SeedQ[] = [
+// —— Seed prompts (bilingual) ————————————————————————————
+const seedPrompts: SeedPrompt[] = [
   {
     id: "seed-1",
     source: "seed",
@@ -121,34 +121,34 @@ const seedQuestions: SeedQ[] = [
 // —— UI labels (bilingual) ————————————————————————————————
 const I18N: Record<Lang, Record<string, string>> = {
   en: {
-    nav_choose: "Choose a Question",
+    nav_choose: "Choose a Prompt",
     nav_answer: "Submit your Voice",
-    nav_leave: "Leave a Question",
-    idle_title: "Click a question to answer it.",
+    nav_leave: "Leave a Prompt",
+    idle_title: "Click a prompt to answer it.",
     idle_hint:
-      "By responding to a question, you actively contribute to this evolving democracy. Your input can shape it in different ways. Share your perspective and observe how the tree transforms through collective voices.",
+      "By responding to a prompt, you actively contribute to this evolving democracy. Your input can shape it in different ways. Share your perspective and observe how the tree transforms through collective voices.",
     final_title: "How would you like to participate in this democracy?",
-    final_hint: "You can either leave a question for the next visitor or add a statement that will shape this democracy.",
+    final_hint: "You can either leave a prompt for the next visitor or add a decree that will shape this democracy.",
     
-    final_question_button: "Leave Question",
-    final_statement_button: "Add Statement",
+    final_prompt_button: "Leave Prompt",
+    final_decree_button: "Add Decree",
     lang: "Language",
 
-    refresh: "Refresh questions",
+    refresh: "Refresh prompts",
   },
   de: {
-    nav_choose: "Wähle eine Frage",
+    nav_choose: "Wähle einen Prompt",
     nav_answer: "Antwort eingeben",
-    nav_leave: "Frage hinzufügen",
-    idle_title: "Klicke eine Frage an, um sie zu beantworten.",
+    nav_leave: "Prompt hinzufügen",
+    idle_title: "Klicke einen Prompt an, um ihn zu beantworten.",
     idle_hint:
       "Mit deiner Antwort trägst du aktiv zu dieser sich entwickelnden Demokratie bei. Dein Beitrag kann sie auf unterschiedliche Weise prägen. Teile deine Perspektive und beobachte, wie sich der Baum durch die Stimmen aller verändert.",
           final_title: "Wie möchtest du dich an dieser Demokratie beteiligen?",
-    final_hint: "Du kannst eine Frage für die nächste Person hinterlassen oder ein Statement hinzufügen, das diese Demokratie prägt.",
-    final_question_button: "Frage hinterlassen",
-    final_statement_button: "Statement hinzufügen",
+    final_hint: "Du kannst einen Prompt für die nächste Person hinterlassen oder ein Dekret hinzufügen, das diese Demokratie prägt.",
+    final_prompt_button: "Prompt hinterlassen",
+    final_decree_button: "Dekret hinzufügen",
     lang: "Sprache",
-    refresh: "Fragen neu mischen",
+    refresh: "Prompts neu mischen",
   },
 };
 
@@ -166,7 +166,7 @@ function pickRandom<T>(arr: T[], n: number) {
 
 // —— Main component —————————————————————————————————————————
 export default function FlowApp() {
-  // —— UI language toggle (only affects labels + seed question language)
+  // —— UI language toggle (only affects labels + seed prompt language)
   const [uiLang, setUiLang] = useState<Lang>(() => {
     const raw = localStorage.getItem(STORAGE_LANG_KEY);
     return raw === "de" || raw === "en" ? raw : "en";
@@ -186,13 +186,13 @@ export default function FlowApp() {
 
   // —— Page flow state
   const [page, setPage] = useState<"idle" | "ask" | "final">("idle");
-  const [selected, setSelected] = useState<Q | null>(null);
+  const [selected, setSelected] = useState<Prompt | null>(null);
   const [lastAnswer, setLastAnswer] = useState<string>("");
   // this helps show the UI when the user chooses between two buttons:
-  const [finalMode, setFinalMode] = useState< "question" | "statement" | null>(null);
+  const [finalMode, setFinalMode] = useState< "prompt" | "decree" | null>(null);
   // submission modal state
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-const [submittedType, setSubmittedType] = useState<"question" | "statement" | null>(null);
+const [submittedType, setSubmittedType] = useState<"prompt" | "decree" | null>(null);
 
 
 
@@ -201,8 +201,8 @@ const [submittedType, setSubmittedType] = useState<"question" | "statement" | nu
   const [lastPickedIds, setLastPickedIds] = useState<Set<string>>(new Set());
 
 
-  // —— User-added questions (loaded from localStorage)
-  const [userQuestions, setUserQuestions] = useState<UserQ[]>(() => {
+  // —— User-added prompts (loaded from localStorage)
+  const [userPrompts, setUserPrompts] = useState<UserPrompt[]>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_USER_KEY);
       if (!raw) return [];
@@ -227,36 +227,36 @@ const [submittedType, setSubmittedType] = useState<"question" | "statement" | nu
     }
   });
 
-  // Persist user questions
+  // Persist user prompts
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(userQuestions));
+      localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(userPrompts));
     } catch {
       // ignore
     }
-  }, [userQuestions]);
+  }, [userPrompts]);
 
-  // —— Combined question pool (seed + user)
-  const allQuestions = useMemo<Q[]>(
-    () => [...userQuestions, ...seedQuestions],
-    [userQuestions],
+  // —— Combined prompt pool (seed + user)
+  const allPrompts = useMemo<Prompt[]>(
+    () => [...userPrompts, ...seedPrompts],
+    [userPrompts],
   );
 
   // —— Visible set on idle screen
-  // Goal: show 8 random questions, and when you refresh, try to make them "completely new"
+  // Goal: show 8 random prompts, and when you refresh, try to make them "completely new"
   // (meaning: minimal overlap with the previous selection, if possible).
-  const visibleQuestions = useMemo(() => {
+  const visiblePrompts = useMemo(() => {
     if (page !== "idle") return [];
 
     const N = 10;
     const tries = 10;
 
-    let best: Q[] = [];
+    let best: Prompt[] = [];
     let bestOverlap = Number.POSITIVE_INFINITY;
 
     for (let k = 0; k < tries; k++) {
-      const candidate = pickRandom(allQuestions, N);
-      const ids = new Set(candidate.map((q) => q.id));
+      const candidate = pickRandom(allPrompts, N);
+      const ids = new Set(candidate.map((p) => p.id));
 
       let overlap = 0;
       ids.forEach((id) => {
@@ -274,17 +274,17 @@ const [submittedType, setSubmittedType] = useState<"question" | "statement" | nu
     }
 
     return best;
-  }, [page, allQuestions, lastPickedIds, refreshKey]);
+  }, [page, allPrompts, lastPickedIds, refreshKey]);
 
   // —— What gets displayed (seed uses uiLang; user stays as typed)
-  const visibleDisplayQuestions = useMemo(
+  const visibleDisplayPrompts = useMemo(
     () =>
-      visibleQuestions.map((q) => ({
-        id: q.id,
-        q, // keep original object so we know if it's seed/user later
-        text: q.source === "seed" ? q.text[uiLang] : q.text,
+      visiblePrompts.map((p) => ({
+        id: p.id,
+        q: p, // keep original object so we know if it's seed/user later
+        text: p.source === "seed" ? p.text[uiLang] : p.text,
       })),
-    [visibleQuestions, uiLang],
+    [visiblePrompts, uiLang],
   );
 
   // —— Inactivity timer (kiosk mode)
@@ -311,27 +311,27 @@ const [submittedType, setSubmittedType] = useState<"question" | "statement" | nu
   }, []);
 
   // —— Handlers (navigation + actions)
-  const goBack = () => {
-    resetInactivityTimer();
-    setFinalMode(null)
-  };
+  // const goBack = () => {
+  //   resetInactivityTimer();
+  //   setFinalMode(null)
+  // };
   const goHome = () => {
     resetInactivityTimer();
        setPage("idle");
   };
 
 
-  const goToAsk = () => {
-    resetInactivityTimer();
-    setPage("ask");
-  };
+  // const goToAsk = () => {
+  //   resetInactivityTimer();
+  //   setPage("ask");
+  // };
 
-  const goToFinal = () => {
-    resetInactivityTimer();
-    setPage("final");
-  };
+  // const goToFinal = () => {
+  //   resetInactivityTimer();
+  //   setPage("final");
+  // };
 
-  const handleSelect = (item: { id: string; text: string; q: Q }) => {
+  const handleSelect = (item: { id: string; text: string; q: Prompt }) => {
     resetInactivityTimer();
     setSelected(item.q);
     setPage("ask");
@@ -344,27 +344,27 @@ const [submittedType, setSubmittedType] = useState<"question" | "statement" | nu
     setPage("final");
   };
 
-const handleAddQuestionWithModal = (text: string) => {
+const handleAddPromptWithModal = (text: string) => {
 
-  setSubmittedType("question");
+  setSubmittedType("prompt");
   setShowSubmissionModal(true);
 
   setTimeout(() => {
-      handleAddQuestion(text); // properly call function 
+      handleAddPrompt(text); // properly call function 
     setShowSubmissionModal(false);
     setSubmittedType(null);
     goHome(); // sends back to idle after modal
   }, 4000);
 };
 
-const handleAddStatementWithModal = (text: string) => {
+const handleAddDecreeWithModal = (text: string) => {
 
 
-  setSubmittedType("statement");
+  setSubmittedType("decree");
   setShowSubmissionModal(true);
 
   setTimeout(() => {
-      handleAddQuestion(text); // this is just a placeholder; replace with actual statement handling logic
+      handleAddPrompt(text); // this is just a placeholder; replace with actual decree handling logic
     setShowSubmissionModal(false);
     setSubmittedType(null);
     goHome();
@@ -373,18 +373,18 @@ const handleAddStatementWithModal = (text: string) => {
 
 
 
-  const handleAddQuestion = (text: string) => {
+  const handleAddPrompt = (text: string) => {
     resetInactivityTimer();
 
     const trimmed = text.trim();
     if (trimmed.length > 0) {
-      const q: UserQ = {
+      const p: UserPrompt = {
         id: `user-${Date.now()}`,
         text: trimmed,
         lang: uiLang, // remember UI language at creation time
         source: "user",
       };
-      setUserQuestions((s) => [q, ...s]);
+      setUserPrompts((s) => [p, ...s]);
     }
 
     // reset flow
@@ -393,11 +393,11 @@ const handleAddStatementWithModal = (text: string) => {
     setPage("idle");
   };
 
-  // Refresh questions button:
+  // Refresh prompts button:
   // - store current selection ids so we can avoid them next time
   // - bump refreshKey to force recompute + new layout
-  const handleRefreshQuestions = () => {
-    setLastPickedIds(new Set(visibleQuestions.map((q) => q.id)));
+  const handleRefreshPrompts = () => {
+    setLastPickedIds(new Set(visiblePrompts.map((p) => p.id)));
     setRefreshKey((k) => k + 1);
   };
 
@@ -442,7 +442,7 @@ const handleAddStatementWithModal = (text: string) => {
           </div>
         </nav>
 
-        {/* —— Page: Idle (floating questions) —— */}
+        {/* —— Page: Idle (floating prompts) —— */}
         {page === "idle" && (
           <section>
             <h1 className="text-3xl font-semibold mb-6 text-center">
@@ -457,7 +457,7 @@ const handleAddStatementWithModal = (text: string) => {
             <div className="flex items-center justify-center mb-4">
               <button
                 type="button"
-                onClick={handleRefreshQuestions}
+                onClick={handleRefreshPrompts}
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/0 hover:bg-white/35 border border-white/15 text-sm text-white transition"
               >
                 <i className="bi bi-arrow-clockwise text-base leading-none" />
@@ -465,8 +465,8 @@ const handleAddStatementWithModal = (text: string) => {
               </button>
             </div>
 
-            <FloatingQuestions
-              questions={visibleDisplayQuestions}
+            <FloatingPrompts
+              prompts={visibleDisplayPrompts}
               onSelect={handleSelect}
               //refreshKey={refreshKey}
             />
@@ -475,11 +475,11 @@ const handleAddStatementWithModal = (text: string) => {
 
 {page !== "idle" && selected && (
   <>
-    {/* —— QuestionScreen —— */}
+    {/* —— PromptScreen —— */}
     {lastAnswer.trim() === "" && (
-      <QuestionScreen
+      <PromptScreen
         uiLang={uiLang}
-        question={{
+        prompt={{
           id: selected.id,
           text:
             selected.source === "seed"
@@ -509,25 +509,25 @@ const handleAddStatementWithModal = (text: string) => {
     {/* Buttons */}
     <div className="flex justify-center gap-4 mb-6">
       <button
-        onClick={() => setFinalMode("question")}
+        onClick={() => setFinalMode("prompt")}
         className={`px-4 py-2 rounded-lg border transition
-          ${finalMode === "question"
+          ${finalMode === "prompt"
             ? "bg-white/20 border-white/40"
             : "bg-white/5 border-white/20 hover:bg-white/10"}
         `}
       >
-      {t("final_question_button")}
+      {t("final_prompt_button")}
       </button>
 
       <button
-        onClick={() => setFinalMode("statement")}
+        onClick={() => setFinalMode("decree")}
         className={`px-4 py-2 rounded-lg border transition
-          ${finalMode === "statement"
+          ${finalMode === "decree"
             ? "bg-white/20 border-white/40"
             : "bg-white/5 border-white/20 hover:bg-white/10"}
         `}
       >
-          {t("final_statement_button")}
+          {t("final_decree_button")}
       </button>
         <button
     onClick={goHome}
@@ -538,21 +538,21 @@ const handleAddStatementWithModal = (text: string) => {
     </div>
 
     {/* Conditional UI below */}
-    {finalMode === "question" && (
+    {finalMode === "prompt" && (
       <FinalScreen
         uiLang={uiLang}
         answer={lastAnswer}
-        onLeaveQuestion={handleAddQuestionWithModal}
+        onLeavePrompt={handleAddPromptWithModal}
    
         disabled={lastAnswer.trim() === ""}
       />
     )}
 
-    {finalMode === "statement" && (
+    {finalMode === "decree" && (
       <Database
         uiLang={uiLang}
         answer={lastAnswer}
-        onLeaveQuestion={handleAddStatementWithModal}
+        onLeavePrompt={handleAddDecreeWithModal}
        
         disabled={lastAnswer.trim() === ""}
       />
@@ -563,12 +563,12 @@ const handleAddStatementWithModal = (text: string) => {
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
     <div className="bg-neutral-900 p-6 rounded-xl max-w-sm text-center text-white">
       <h2 className="text-xl font-semibold mb-4">
-        {submittedType === "question" ? "Question submitted!" : "Statement submitted!"}
+        {submittedType === "prompt" ? "Prompt submitted!" : "Decree submitted!"}
       </h2>
       <p className="mb-6">
-        {submittedType === "question"
-          ? "Thank you for leaving a question. It will be shown to the next visitor."
-          : "Thank you for adding a statement. It will help shape this democracy."}
+        {submittedType === "prompt"
+          ? "Thank you for leaving a prompt. It will be shown to the next visitor."
+          : "Thank you for adding a decree. It will help shape this democracy."}
       </p>
    
     </div>
