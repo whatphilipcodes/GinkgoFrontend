@@ -303,7 +303,24 @@ const [submittedType, setSubmittedType] = useState<"prompt" | "decree" | null>(n
   const handleSubmitAnswer = (text: string) => {
     resetInactivityTimer();
     setLastAnswer(text);
-      setFinalMode(null); // 👈 reset to choice screen
+    setFinalMode(null); // 👈 reset to choice screen
+    
+    // Save the user's thought/answer to the database
+    const trimmed = text.trim();
+    if (trimmed.length > 0) {
+      const success = sendWsCommand({
+        action: "add",
+        text: trimmed,
+        type: "thought",
+        lang: uiLang as InputLang,
+        source: "audience",
+      });
+      
+      if (!success) {
+        console.error("Failed to save thought:", wsError);
+      }
+    }
+    
     setPage("final");
   };
 
