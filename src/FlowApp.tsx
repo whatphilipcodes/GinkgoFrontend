@@ -250,8 +250,9 @@ const [submittedType, setSubmittedType] = useState<"prompt" | "decree" | null>(n
       
       const success = sendWsCommand({
         action: "query",
-        query_type: "by_type",
-        filters: { input_type: "prompt", limit: 100 },
+        type: "prompt",
+        query_type: "all",
+        filters: { limit: 100 },
       });
       
       if (!success) {
@@ -372,8 +373,9 @@ const handleAddDecreeWithModal = (text: string) => {
       setTimeout(() => {
         sendWsCommand({
           action: "query",
-          query_type: "by_type",
-          filters: { input_type: "prompt", limit: 100 },
+          type: "prompt",
+          query_type: "all",
+          filters: { limit: 100 },
         });
       }, 500);
     }
