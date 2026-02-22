@@ -10,10 +10,17 @@ export interface InputRecord {
   type: InputType;
   lang: InputLang;
   source: InputSource;
-  attribute_class: string | null;
-  trait: string | null;
+  valid: boolean;
   created_at: string;
-  updated_at: string;
+  modified_at: string;
+  // GSOD fields (only for thoughts)
+  attribute_class?: string | null;
+  trait?: string | null;
+  trait_offset?: number;
+  trait_entailment?: number;
+  score_health?: number;
+  score_split?: number;
+  score_impact?: number;
 }
 
 // —— Thought commands ————————————————————————————————————————
