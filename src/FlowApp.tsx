@@ -136,7 +136,10 @@ export default function FlowApp() {
   const [finalMode, setFinalMode] = useState< "prompt" | "decree" | null>(null);
   // submission modal state
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-const [submittedType, setSubmittedType] = useState<"prompt" | "decree" | null>(null);
+  const [submittedType, setSubmittedType] = useState<"prompt" | "decree" | null>(null);
+  // rejection modal state
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [rejectionType, setRejectionType] = useState<"opinion" | "prompt" | "decree" | null>(null);
 
 
 
@@ -166,6 +169,61 @@ const [submittedType, setSubmittedType] = useState<"prompt" | "decree" | null>(n
       setFetchedUserPrompts(mappedUserPrompts);
     }
   });
+
+  // Toggle this to `false` to use the real backend WebSocket data.
+  // Set to `true` for local testing with fake prompts.
+  const USE_FAKE_PROMPTS = true;
+
+  // If using fake prompts for local testing, seed some sample prompts here
+  // and avoid sending the backend query.
+  useEffect(() => {
+    if (!USE_FAKE_PROMPTS) return;
+
+    const fakeSeeds: SeedPrompt[] = [
+      {
+        id: "seed-1",
+        text: {
+          en: "Should cities add more free public parks?",
+          de: "Sollten Städte mehr kostenlose öffentliche Parks einrichten?",
+        },
+        source: "seed",
+      },
+      {
+        id: "seed-2",
+        text: {
+          en: "How should we decide on shared community funds?",
+          de: "Wie sollten wir über gemeinsame Gemeinschaftsfonds entscheiden?",
+        },
+        source: "seed",
+      },
+      {
+        id: "seed-3",
+        text: {
+          en: "What makes a neighborhood feel safe?",
+          de: "Was lässt ein Viertel sicher erscheinen?",
+        },
+        source: "seed",
+      },
+    ];
+
+    const fakeUsers: UserPrompt[] = [
+      {
+        id: "user-1",
+        text: "Can we have free community workshops on weekends?",
+        lang: "en",
+        source: "user",
+      },
+      {
+        id: "user-2",
+        text: "Mehr Fahrradwege in der Stadt",
+        lang: "de",
+        source: "user",
+      },
+    ];
+
+    setFetchedSeedPrompts(fakeSeeds);
+    setFetchedUserPrompts(fakeUsers);
+  }, []);
 
   // —— Combined prompt pool (seed + user from backend)
   const allPrompts = useMemo<Prompt[]>(
@@ -243,6 +301,7 @@ const [submittedType, setSubmittedType] = useState<"prompt" | "decree" | null>(n
 
   // —— Fetch seed prompts from backend on mount
   useEffect(() => {
+    if (USE_FAKE_PROMPTS) return;
     // Check if connected before sending
     let isMounted = true;
     const attemptFetch = () => {
@@ -346,6 +405,16 @@ const handleAddDecreeWithModal = (text: string) => {
     setShowSubmissionModal(false);
     setSubmittedType(null);
     goHome();
+  }, 4000);
+};
+
+// Callback to show rejection modal from textarea components
+const showRejectionMessage = (context: "opinion" | "prompt" | "decree") => {
+  setRejectionType(context);
+  setShowRejectionModal(true);
+  setTimeout(() => {
+    setShowRejectionModal(false);
+    setRejectionType(null);
   }, 4000);
 };
 
@@ -484,20 +553,20 @@ const handleAddDecreeWithModal = (text: string) => {
         }}
         onBack={goHome}
         hasAnswered={false}
+        onRejection={() => showRejectionMessage("opinion")}
       />
     )}
 
-    {/* —— FinalScreen + Database —— */}
- {page === "final" && (
-  <div className="mt-6 max-w-2xl mx-auto">
-    {/* Text */}
-     <h1 className="text-3xl font-semibold mb-6 text-center">
-              {t("final_title")}
-            </h1>
+    {lastAnswer.trim() !== "" && (
+      <div className="mt-6 max-w-2xl mx-auto">
+        {/* Text */}
+        <h1 className="text-3xl font-semibold mb-6 text-center">
+          {t("final_title")}
+        </h1>
 
-            <p className="text-center text-sm text-neutral-300/80 max-w-0.4xl mx-auto mb-4">
-              {t("final_hint")}
-            </p>
+        <p className="text-center text-sm text-neutral-300/80 max-w-0.4xl mx-auto mb-4">
+          {t("final_hint")}
+        </p>
 
     {/* Buttons */}
     <div className="flex justify-center gap-4 mb-6">
@@ -523,11 +592,16 @@ const handleAddDecreeWithModal = (text: string) => {
           {t("final_decree_button")}
       </button>
         <button
-    onClick={goHome}
-    className="px-4 py-2 rounded-lg border border-white/20 bg-white/0 hover:bg-white/10"
-  >
-    Skip
-  </button>
+        onClick={() => {
+          setSelected(null);
+          setLastAnswer("");
+          setFinalMode(null);
+          goHome();
+        }}
+        className="px-4 py-2 rounded-lg border border-white/20 bg-white/0 hover:bg-white/10"
+      >
+        Skip
+      </button>
     </div>
 
     {/* Conditional UI below */}
@@ -536,7 +610,7 @@ const handleAddDecreeWithModal = (text: string) => {
         uiLang={uiLang}
         answer={lastAnswer}
         onLeavePrompt={handleAddPromptWithModal}
-   
+        onRejection={() => showRejectionMessage("prompt")}
         disabled={lastAnswer.trim() === ""}
       />
     )}
@@ -546,11 +620,14 @@ const handleAddDecreeWithModal = (text: string) => {
         uiLang={uiLang}
         answer={lastAnswer}
         onLeavePrompt={handleAddDecreeWithModal}
-       
+        onRejection={() => showRejectionMessage("decree")}
         disabled={lastAnswer.trim() === ""}
       />
     )}
   </div>
+)}
+
+  </>
 )}
 {showSubmissionModal && submittedType && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -567,9 +644,24 @@ const handleAddDecreeWithModal = (text: string) => {
     </div>
   </div>
 )}
-
-
-  </>
+{showRejectionModal && rejectionType && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="bg-neutral-900 p-6 rounded-xl max-w-sm text-center text-white">
+      <h2 className="text-xl font-semibold mb-4 text-red-400">Content Rejected</h2>
+      <p className="mb-6">
+        Your {rejectionType === "opinion" ? "response" : rejectionType} contains inappropriate content or hate speech and cannot be submitted.
+      </p>
+      <button
+        onClick={() => {
+          setShowRejectionModal(false);
+          setRejectionType(null);
+        }}
+        className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white transition"
+      >
+        Close
+      </button>
+    </div>
+  </div>
 )}
       </div>
     </main>

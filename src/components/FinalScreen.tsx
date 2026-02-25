@@ -6,28 +6,28 @@ export default function FinalScreen({
   uiLang,
   // answer,
   onLeavePrompt,
-
-   disabled = false, // ← new
+  disabled = false, // ← new
+  onRejection,
 }: {
   uiLang: "en" | "de";
   answer: string;
   onLeavePrompt: (p: string) => void;
-
-    disabled?: boolean; // ← new
+  disabled?: boolean; // ← new
+  onRejection: () => void;
 }) {
   const [newP, setNewP] = useState("");
 
   const I18N = {
     en: {
       title: "Your Input",
-      leave: "Leave a new prompt for others",
+      leave: "Leave a new prompt for others (Max 400 characters)",
       placeholder: "Write a prompt to add to the pile…",
       back: "Back",
       add: "Add Prompt",
     },
     de: {
       title: "Deine Eingabe",
-      leave: "Hinterlasse einen neuen Prompt für andere",
+      leave: "Hinterlasse einen neuen Prompt für andere (Max. 400 Zeichen)",
       placeholder: "Schreibe einen Prompt für den Stapel…",
       back: "Zurück",
       add: "Prompt hinzufügen",
@@ -49,9 +49,45 @@ export default function FinalScreen({
       <Textarea
         placeholder={t.placeholder}
         value={newP}
-        onChange={(e) => setNewP(e.target.value)}
+        onChange={(e) => {
+          const raw = e.target.value;
+          // Allow letters A-Z/a-z, German chars (äöüß), numbers 0-9, and spaces. Strip anything else.
+          const sanitized = raw.replace(/[^A-Za-zäöüßÄÖÜ0-9 ]/g, "");
+          // Enforce 400 character limit
+          if (sanitized.length > 400) return;
+          const prev = newP;
+
+          if (sanitized.length > prev.length) {
+            let start = 0;
+            while (start < prev.length && prev[start] === sanitized[start]) {
+              start++;
+            }
+
+            let prevEnd = prev.length - 1;
+            let newEnd = sanitized.length - 1;
+            while (prevEnd >= start && prev[prevEnd] === sanitized[newEnd]) {
+              prevEnd--;
+              newEnd--;
+            }
+
+            const added = sanitized.slice(start, newEnd + 1);
+            for (const ch of added) {
+              console.log({ key: ch, context: "prompt" });
+            }
+          }
+
+          setNewP(sanitized);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === " " || e.code === "Space") {
+            console.log({ key: "space", context: "prompt" });
+          } else if (e.key === "Enter") {
+            console.log({ key: "return", context: "prompt" });
+            e.preventDefault();
+          }
+        }}
         className="min-h-[140px] mb-4"
-        disabled={disabled} // ← disable textarea
+        disabled={disabled}
       />
       <div className="flex gap-2 justify-end">
      
@@ -65,6 +101,7 @@ export default function FinalScreen({
         >
           {t.add}
         </Button>
+          
       </div>
     </div>
   );

@@ -11,12 +11,14 @@ export default function PromptScreen({
   //  hasAnswered = false, // default false
   onSubmit,
   onBack,
+  onRejection,
 }: {
   uiLang: "en" | "de";
   prompt?: { id: string; text: string } | null;
     hasAnswered?: boolean; // ← add this
   onSubmit: (answer: string) => void;
   onBack: () => void;
+  onRejection: () => void;
 }) {
   const [answer, setAnswer] = useState("");
   const [phase, setPhase] = useState<Phase>("form");
@@ -34,14 +36,14 @@ export default function PromptScreen({
   const I18N = {
     en: {
       shareTitle: "Share your voice",
-      shareHint: "Share your thoughts below. Once you have contributed to this democracy you will be able to leave a prompt for other participants or add a decree that will shape this democracy.",
+      shareHint: "Share your thoughts below. Once you have contributed to this democracy you will be able to leave a prompt for other participants or add a decree that will shape this democracy (Max 400 characters).",
       placeholder: "I think…",
       back: "Back",
       submit: "Submit",
     },
     de: {
       shareTitle: "Teile deine Stimme",
-      shareHint: "Schreibe deine Meinung hier unten.",
+      shareHint: "Schreibe deine Meinung hier unten (Max. 400 Zeichen)",
       placeholder: "Ich denke…",
       back: "Zurück",
       submit: "Absenden",
@@ -83,7 +85,48 @@ export default function PromptScreen({
               <Textarea
                 placeholder={t.placeholder}
                 value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  // Allow letters A-Z/a-z, German chars (äöüß), numbers 0-9, and spaces. Strip anything else.
+                  const sanitized = raw.replace(/[^A-Za-zäöüßÄÖÜ0-9 ]/g, "");
+                  // Enforce 400 character limit
+                  if (sanitized.length > 400) return;
+                  const prev = answer;
+
+                  if (sanitized.length > prev.length) {
+                    let start = 0;
+                    while (start < prev.length && prev[start] === sanitized[start]) {
+                      start++;
+                    }
+
+                    let prevEnd = prev.length - 1;
+                    let newEnd = sanitized.length - 1;
+                    while (prevEnd >= start && prev[prevEnd] === sanitized[newEnd]) {
+                      prevEnd--;
+                      newEnd--;
+                    }
+
+                    const added = sanitized.slice(start, newEnd + 1);
+                    for (const ch of added) {
+                      console.log({ key: ch, context: "opinion" });
+                    }
+                  }
+
+                  // Update state with sanitized value (blocks non-letters)
+                  setAnswer(sanitized);
+                }}
+                onKeyDown={(e) => {
+                  // Space: log but allow insertion
+                  if (e.key === " " || e.code === "Space") {
+                    console.log({ key: "space" });
+                    // do not preventDefault so space is inserted
+                  } else if (e.key === "Enter") {
+                    // Enter should submit the form (prevent newline)
+                    console.log({ key: "return" });
+                    e.preventDefault();
+                    
+                  }
+                }}
                 className="min-h-[180px] mb-4"
               />
 
@@ -99,6 +142,8 @@ export default function PromptScreen({
                 <Button onClick={handleSubmit} disabled={!answer.trim()}>
                   {t.submit}
                 </Button>
+            
+
               </div>
             </div>
           </motion.div>
