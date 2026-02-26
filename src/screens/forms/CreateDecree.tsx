@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { CHAR_LIMIT } from "@/config";
 import { handleKeyInput } from "@/lib/utils";
-import type { InputLang } from "@/lib/types";
+import type { InputLang, InputType } from "@/lib/types";
 
 const COPY = {
   en: {
@@ -21,13 +21,15 @@ const COPY = {
 interface CreateDecreeProps {
   uiLang: InputLang;
   answer: string;
-  onLeavePrompt: (text: string) => void;
+  onLeavePrompt: (text: string) => Promise<void> | void;
   disabled?: boolean;
   onRejection: () => void;
+  onKeystroke?: (key: string, context: InputType) => boolean | void;
 }
 
-export default function CreateDecree({ uiLang, onLeavePrompt, disabled }: CreateDecreeProps) {
+export default function CreateDecree({ uiLang, onLeavePrompt, disabled, onKeystroke }: CreateDecreeProps) {
   const [value, setValue] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const t = COPY[uiLang];
 
   return (
@@ -37,14 +39,20 @@ export default function CreateDecree({ uiLang, onLeavePrompt, disabled }: Create
         placeholder={t.placeholder}
         value={value}
         onChange={(e) => { if (e.target.value.length <= CHAR_LIMIT) setValue(e.target.value); }}
-        onKeyDown={(e) => { if (value.length < CHAR_LIMIT) handleKeyInput(e, "thought"); }}
+        onKeyDown={(e) => { if (value.length < CHAR_LIMIT) handleKeyInput(e, "decree", onKeystroke); }}
         className="min-h-[140px] mb-4"
-        disabled={disabled}
+        disabled={disabled || submitting}
       />
       <div className="flex gap-2 justify-end">
         <Button
-          onClick={() => { if (!value.trim()) return; onLeavePrompt(value.trim()); setValue(""); }}
-          disabled={disabled || !value.trim()}
+          onClick={async () => {
+            if (!value.trim()) return;
+            setSubmitting(true);
+            await onLeavePrompt(value.trim());
+            setSubmitting(false);
+            setValue("");
+          }}
+          disabled={disabled || submitting || !value.trim()}
         >
           {t.add}
         </Button>

@@ -1,100 +1,193 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type {
-  WebSocketCommand,
-  WebSocketResponse,
-} from "@/lib/types";
+import { DEBUG_WS, REQUEST_TIMEOUT_MS } from "@/config";
+import type { WebSocketCommand, WebSocketMatcher, WebSocketResponse } from "@/lib/types";
 
-/**
- * Custom hook for WebSocket connection management
- * Handles connection lifecycle and command sending
- */
+const BASE_DELAY_MS = 500;
+const MAX_DELAY_MS = 15000;
+
+interface Waiter {
+  match: WebSocketMatcher;
+  resolve: (resp: WebSocketResponse) => void;
+  reject: (err: Error) => void;
+  timeoutId: ReturnType<typeof setTimeout> | null;
+}
+
 export function useWebSocket(
-  onMessageReceived?: (data: WebSocketResponse) => void
+  onMessageReceived?: (data: WebSocketResponse) => void,
 ) {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const wsRef = useRef<WebSocket | null>(null);
   const callbackRef = useRef(onMessageReceived);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const manualCloseRef = useRef(false);
+  const attemptRef = useRef(0);
+  const connectRef = useRef<() => void>(() => {});
+  const waitersRef = useRef<Waiter[]>([]);
 
-  // Keep callback ref in sync
   useEffect(() => {
     callbackRef.current = onMessageReceived;
   }, [onMessageReceived]);
 
-  // Send a command through WebSocket
+  const clearReconnectTimer = useCallback(() => {
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
+  }, []);
+
+  const cleanupSocket = useCallback(() => {
+    const socket = wsRef.current;
+    if (!socket) return;
+
+    socket.onopen = null;
+    socket.onmessage = null;
+    socket.onerror = null;
+    socket.onclose = null;
+    try {
+      socket.close();
+    } catch {
+      /* ignore */
+    }
+    wsRef.current = null;
+  }, []);
+
+  const flushWaitersWithError = useCallback((message: string) => {
+    waitersRef.current.forEach((w) => {
+      if (w.timeoutId) clearTimeout(w.timeoutId);
+      w.reject(new Error(message));
+    });
+    waitersRef.current = [];
+  }, []);
+
+  const scheduleReconnect = useCallback(() => {
+    if (manualCloseRef.current) return;
+
+    const delay = Math.min(MAX_DELAY_MS, BASE_DELAY_MS * 2 ** attemptRef.current);
+    attemptRef.current += 1;
+    clearReconnectTimer();
+
+    reconnectTimerRef.current = setTimeout(() => {
+      connectRef.current();
+    }, delay);
+  }, [clearReconnectTimer]);
+
+  const connect = useCallback(() => {
+    cleanupSocket();
+
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const url = `${protocol}//${window.location.host}/ws/frontend`;
+
+    try {
+      const socket = new WebSocket(url);
+      wsRef.current = socket;
+
+      socket.onopen = () => {
+        attemptRef.current = 0;
+        clearReconnectTimer();
+        setIsConnected(true);
+        setError(null);
+        if (DEBUG_WS) console.log("[ws] open", url);
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data) as WebSocketResponse;
+          if (DEBUG_WS) console.log("[ws] recv", data);
+
+          // resolve the first waiter that matches
+          for (let i = 0; i < waitersRef.current.length; i++) {
+            const w = waitersRef.current[i];
+            if (w.match(data)) {
+              if (w.timeoutId) clearTimeout(w.timeoutId);
+              waitersRef.current.splice(i, 1);
+              w.resolve(data);
+              break;
+            }
+          }
+
+          callbackRef.current?.(data);
+        } catch (err) {
+          console.error("Failed to parse WebSocket message", err);
+          setError("Invalid WebSocket message");
+        }
+      };
+
+      socket.onerror = () => {
+        setError("WebSocket error");
+        flushWaitersWithError("WebSocket error");
+      };
+
+      socket.onclose = () => {
+        setIsConnected(false);
+        flushWaitersWithError("WebSocket closed");
+        scheduleReconnect();
+        if (DEBUG_WS) console.log("[ws] closed", url);
+      };
+    } catch (err) {
+      console.error("WebSocket init failed", err);
+      setError("WebSocket init failed");
+      scheduleReconnect();
+    }
+  }, [cleanupSocket, clearReconnectTimer, scheduleReconnect]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
+
+  useEffect(() => {
+    manualCloseRef.current = false;
+    connect();
+    return () => {
+      manualCloseRef.current = true;
+      clearReconnectTimer();
+      cleanupSocket();
+      flushWaitersWithError("WebSocket unmounted");
+    };
+  }, [connect, clearReconnectTimer, cleanupSocket, flushWaitersWithError]);
+
   const send = useCallback((command: WebSocketCommand): boolean => {
-    const isReady =
-      wsRef.current && wsRef.current.readyState === WebSocket.OPEN;
+    const socket = wsRef.current;
+    const isReady = socket && socket.readyState === WebSocket.OPEN;
 
     if (!isReady) {
-      console.warn("WebSocket not ready when trying to send", {
-        connected: !!wsRef.current,
-        readyState: wsRef.current?.readyState,
-        readyStateNames: {
-          0: "CONNECTING",
-          1: "OPEN",
-          2: "CLOSING",
-          3: "CLOSED",
-        },
-      });
+      setError("WebSocket not connected");
       return false;
     }
 
     try {
-      console.log("Sending command:", command.action, command.type);
-      wsRef.current!.send(JSON.stringify(command));
+      if (DEBUG_WS) console.log("[ws] send", command);
+      socket!.send(JSON.stringify(command));
       return true;
     } catch (err) {
-      const errorMsg =
-        err instanceof Error ? err.message : "Failed to send command";
-      console.error("Send error:", errorMsg);
+      const message = err instanceof Error ? err.message : "Failed to send";
+      setError(message);
       return false;
     }
   }, []);
 
-  // Connect on mount and cleanup on unmount
-  useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const url = `${protocol}//${window.location.host}/ws/frontend`;
+  const sendAndWait = useCallback(
+    async (
+      command: WebSocketCommand,
+      match: WebSocketMatcher,
+      timeoutMs: number = REQUEST_TIMEOUT_MS,
+    ): Promise<WebSocketResponse> => {
+      return new Promise<WebSocketResponse>((resolve, reject) => {
+        if (!send(command)) {
+          reject(new Error("WebSocket not connected"));
+          return;
+        }
 
-    console.log("Creating WebSocket connection to:", url);
-    wsRef.current = new WebSocket(url);
+        const timeoutId = setTimeout(() => {
+          reject(new Error("WebSocket response timeout"));
+        }, timeoutMs);
 
-    wsRef.current.onopen = () => {
-      setIsConnected(true);
-      setError(null);
-      console.log("WebSocket connected successfully");
-    };
+        waitersRef.current.push({ match, resolve, reject, timeoutId });
+      });
+    },
+    [send],
+  );
 
-    wsRef.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data) as WebSocketResponse;
-        console.log("WebSocket message received:", data);
-        callbackRef.current?.(data);
-      } catch (e) {
-        console.error("Failed to parse WebSocket message:", e);
-      }
-    };
-
-    wsRef.current.onerror = (event) => {
-      console.error("WebSocket error:", event);
-      setIsConnected(false);
-      setError("WebSocket error");
-    };
-
-    wsRef.current.onclose = () => {
-      setIsConnected(false);
-      console.log("WebSocket disconnected");
-    };
-
-    // Cleanup: close connection when component unmounts
-    return () => {
-      console.log("Closing WebSocket connection");
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
-  }, []);
-
-  return { isConnected, error, send };
+  return { isConnected, error, send, sendAndWait };
 }

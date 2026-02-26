@@ -12,7 +12,7 @@ export default function RejectionModal({ isOpen, context, onClose }: RejectionMo
       <div className="bg-neutral-900 p-6 rounded-xl max-w-sm text-center text-white">
         <h2 className="text-xl font-semibold mb-4 text-red-400">Content Rejected</h2>
         <p className="mb-6">
-          Your {context === "thought" ? "response" : context} contains inappropriate content or hate speech and cannot be submitted.
+          Your {context === "thought" ? "response" : context} was rejected because it appeared unrelated to the question. Please note that submissions containing inappropriate language or hate speech will also be blocked.
         </p>
         <button
           onClick={onClose}

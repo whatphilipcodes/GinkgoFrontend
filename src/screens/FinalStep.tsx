@@ -1,6 +1,6 @@
 import ScreenCreateDecree from "@/screens/forms/CreateDecree";
 import ScreenCreatePrompt from "@/screens/forms/CreatePrompt";
-import type { InputLang } from "@/lib/types";
+import type { InputLang, InputType } from "@/lib/types";
 
 export type FinalMode = "prompt" | "decree" | null;
 
@@ -9,10 +9,11 @@ interface FinalStepProps {
   lastAnswer: string;
   finalMode: FinalMode;
   onSelectMode: (mode: FinalMode) => void;
-  onAddPrompt: (text: string) => void;
-  onAddDecree: (text: string) => void;
+  onAddPrompt: (text: string) => Promise<void> | void;
+  onAddDecree: (text: string) => Promise<void> | void;
   onSkip: () => void;
   onRejection: (context: "prompt" | "decree") => void;
+  onKeystroke?: (key: string, context: InputType) => boolean | void;
   title: string;
   hint: string;
   promptButtonLabel: string;
@@ -20,7 +21,7 @@ interface FinalStepProps {
 }
 
 export default function FinalStep(props: FinalStepProps) {
-  const { uiLang, lastAnswer, finalMode, onSelectMode, onAddPrompt, onAddDecree, onSkip, onRejection, title, hint, promptButtonLabel, decreeButtonLabel } = props;
+  const { uiLang, lastAnswer, finalMode, onSelectMode, onAddPrompt, onAddDecree, onSkip, onRejection, onKeystroke, title, hint, promptButtonLabel, decreeButtonLabel } = props;
   return (
     <div className="mt-6 max-w-2xl mx-auto">
       <h1 className="text-3xl font-semibold mb-6 text-center">{title}</h1>
@@ -49,11 +50,11 @@ export default function FinalStep(props: FinalStepProps) {
       </div>
 
       {finalMode === "prompt" && (
-        <ScreenCreatePrompt uiLang={uiLang} answer={lastAnswer} onLeavePrompt={onAddPrompt} onRejection={() => onRejection("prompt")} disabled={lastAnswer.trim() === ""} />
+        <ScreenCreatePrompt uiLang={uiLang} answer={lastAnswer} onLeavePrompt={onAddPrompt} onRejection={() => onRejection("prompt")} onKeystroke={onKeystroke} disabled={lastAnswer.trim() === ""} />
       )}
 
       {finalMode === "decree" && (
-        <ScreenCreateDecree uiLang={uiLang} answer={lastAnswer} onLeavePrompt={onAddDecree} onRejection={() => onRejection("decree")} disabled={lastAnswer.trim() === ""} />
+        <ScreenCreateDecree uiLang={uiLang} answer={lastAnswer} onLeavePrompt={onAddDecree} onRejection={() => onRejection("decree")} onKeystroke={onKeystroke} disabled={lastAnswer.trim() === ""} />
       )}
     </div>
   );

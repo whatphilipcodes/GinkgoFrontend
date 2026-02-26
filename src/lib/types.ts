@@ -1,6 +1,7 @@
 export type InputType = "thought" | "prompt" | "decree";
 export type InputLang = "en" | "de";
 export type InputSource = "seed" | "audience";
+export type InputContext = InputType;
 
 export interface InputRecord {
 	id: number;
@@ -105,6 +106,13 @@ export interface AddDecreeCommand {
 	source: InputSource;
 }
 
+export interface SendKeystrokeCommand {
+	action: "send";
+	type: "keystroke";
+	key: string;
+	context: InputContext;
+}
+
 export interface QueryDecreeCommand {
 	action: "query";
 	type: "decree";
@@ -137,7 +145,8 @@ export type WebSocketCommand =
 	| AddDecreeCommand
 	| QueryDecreeCommand
 	| DeleteDecreeCommand
-	| UpdateDecreeCommand;
+	| UpdateDecreeCommand
+	| SendKeystrokeCommand;
 
 export interface WebSocketResponse {
 	status: "success" | "error";
@@ -148,5 +157,10 @@ export interface WebSocketResponse {
 	records?: InputRecord[];
 	count?: number;
 	query_type?: string;
+	forwarded?: boolean;
+	record_id?: number;
+	deleted?: boolean;
 	[key: string]: any;
 }
+
+export type WebSocketMatcher = (resp: WebSocketResponse) => boolean;

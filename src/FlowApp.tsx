@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import LanguageToggle from "@/components/LanguageToggle";
 import RejectionModal from "@/components/RejectionModal";
 import SubmissionModal from "@/components/SubmissionModal";
@@ -13,7 +13,6 @@ import { promptText } from "@/screens/promptUtils";
 import type { Prompt } from "@/lib/types";
 
 const STORAGE_LANG_KEY = "uiLang";
-const USE_FAKE_PROMPTS = true;
 
 type Page = "idle" | "ask" | "final";
 
@@ -21,7 +20,9 @@ type RejectionContext = "thought" | "prompt" | "decree" | null;
 
 export default function FlowApp() {
   const { uiLang, setUiLang, t } = useLanguage(STORAGE_LANG_KEY);
-  const { allPrompts, addEntry, refreshPrompts } = usePromptSocket(USE_FAKE_PROMPTS);
+  const { allPrompts, addEntry, refreshPrompts, sendKeystroke } = usePromptSocket({
+    onRejection: (ctx) => showRejection(ctx),
+  });
   const [page, setPage] = useState<Page>("idle");
   const [selected, setSelected] = useState<Prompt | null>(null);
   const [lastAnswer, setLastAnswer] = useState("");
@@ -30,6 +31,7 @@ export default function FlowApp() {
   const [submittedType, setSubmittedType] = useState<Exclude<FinalMode, null> | null>(null);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [rejectionType, setRejectionType] = useState<RejectionContext>(null);
+  const [isWaiting, setIsWaiting] = useState(false);
 
   const { reset } = useInactivity(() => {
     setSelected(null);
@@ -41,11 +43,20 @@ export default function FlowApp() {
   const { visiblePrompts, refresh } = useVisiblePrompts(page, allPrompts);
   const displayPrompts = useMemo(() => makeDisplayPrompts(visiblePrompts, uiLang), [visiblePrompts, uiLang]);
 
+  // Ensure we never render a blank screen if the selection is cleared while not on the idle page.
+  useEffect(() => {
+    if (page !== "idle" && !selected) {
+      setPage("idle");
+    }
+  }, [page, selected]);
+
   const goHome = () => {
     reset();
     setSelected(null);
     setLastAnswer("");
     setFinalMode(null);
+    refresh();
+    refreshPrompts();
     setPage("idle");
   };
 
@@ -55,23 +66,44 @@ export default function FlowApp() {
     setPage("ask");
   };
 
-  const submitThought = (text: string) => {
+  const submitThought = async (text: string) => {
     reset();
+    setIsWaiting(true);
+    const resp = await addEntry("thought", text, uiLang);
+    setIsWaiting(false);
+
+    if (!resp || resp.status === "error") {
+      showRejection("thought");
+      return false;
+    }
+
     setLastAnswer(text);
     setFinalMode(null);
-    addEntry("thought", text, uiLang);
     setPage("final");
+    return true;
   };
 
-  const submitWithModal = (text: string, type: Exclude<FinalMode, null>) => {
+  const submitWithModal = async (text: string, type: Exclude<FinalMode, null>) => {
     setSubmittedType(type);
     setShowSubmissionModal(true);
+    setIsWaiting(true);
+
+    const resp = await addEntry(type, text, uiLang);
+
+    setIsWaiting(false);
+
+    if (!resp || resp.status === "error") {
+      showRejection(type);
+      setShowSubmissionModal(false);
+      setSubmittedType(null);
+      return;
+    }
+
     setTimeout(() => {
-      addEntry(type, text, uiLang);
       setShowSubmissionModal(false);
       setSubmittedType(null);
       goHome();
-    }, 4000);
+    }, 800);
   };
 
   const showRejection = (ctx: RejectionContext) => {
@@ -90,6 +122,12 @@ export default function FlowApp() {
           <div className="w-[140px]" />
           <LanguageToggle value={uiLang} label={t("lang")} onChange={setUiLang} />
         </nav>
+
+        {isWaiting && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" aria-label="Loading" />
+          </div>
+        )}
 
         {page === "idle" && (
           <IdleScreen
@@ -110,6 +148,7 @@ export default function FlowApp() {
               onSubmit={submitThought}
               onBack={goHome}
               onRejection={() => showRejection("thought")}
+              onKeystroke={sendKeystroke}
             />
           ) : (
             <FinalStep
@@ -121,6 +160,7 @@ export default function FlowApp() {
               onAddDecree={(text) => submitWithModal(text, "decree")}
               onSkip={goHome}
               onRejection={(ctx) => showRejection(ctx)}
+              onKeystroke={sendKeystroke}
               title={t("final_title")}
               hint={t("final_hint")}
               promptButtonLabel={t("final_prompt_button")}
