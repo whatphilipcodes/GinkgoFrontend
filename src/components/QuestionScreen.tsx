@@ -24,6 +24,7 @@ export default function QuestionScreen({
 
   // keep viewport sizes accurate (desktop resize / kiosk screens)
   useEffect(() => {
+    console.log("CREATE DECREE")
     const update = () =>
       setViewport({ w: window.innerWidth, h: window.innerHeight });
     update();

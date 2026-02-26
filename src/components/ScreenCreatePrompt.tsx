@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CHAR_LIMIT } from "@/config";
-export default function FinalScreen({
+
+export default function ScreenCreatePrompt({
   uiLang,
   // answer,
   onLeavePrompt,
   disabled = false, // ← new
-  onRejection,
+  // onRejection,
 }: {
   uiLang: "en" | "de";
   answer: string;

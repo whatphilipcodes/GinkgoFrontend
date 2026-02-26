@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CHAR_LIMIT } from "@/config";
+import { handleKeyInput } from "@/lib/utils";
 
-export default function Database({
+export default function ScreenCreateDecree({
   uiLang,
   // answer,
   onLeavePrompt,
   disabled = false, // ← new
-  onRejection,
+  // onRejection,
 }: {
   uiLang: "en" | "de";
   answer: string;
@@ -39,9 +40,8 @@ export default function Database({
 
   return (
     <div
-      className={`flex flex-col items-center p-6 w-full max-w-2xl mt-8 text-center transition-opacity ${
-        disabled ? "opacity-50 pointer-events-none" : "opacity-100"
-      }`}
+      className={`flex flex-col items-center p-6 w-full max-w-2xl mt-8 text-center transition-opacity ${disabled ? "opacity-50 pointer-events-none" : "opacity-100"
+        }`}
     >
       {/* <h1 className="text-3xl font-semibold mb-2">{t.title}</h1>
       <div className="bg-white/5 p-4 rounded text-sm mb-6">{answer}</div> */}
@@ -51,47 +51,18 @@ export default function Database({
         placeholder={t.placeholder}
         value={newD}
         onChange={(e) => {
-          const raw = e.target.value;
-          // Allow letters A-Z/a-z, German chars (äöüß), numbers 0-9, and spaces. Strip anything else.
-          const sanitized = raw.replace(/[^A-Za-zäöüßÄÖÜ0-9 ]/g, "");
-          // Enforce character limit
-          if (sanitized.length > CHAR_LIMIT) return;
-          const prev = newD;
-
-          if (sanitized.length > prev.length) {
-            let start = 0;
-            while (start < prev.length && prev[start] === sanitized[start]) {
-              start++;
-            }
-
-            let prevEnd = prev.length - 1;
-            let newEnd = sanitized.length - 1;
-            while (prevEnd >= start && prev[prevEnd] === sanitized[newEnd]) {
-              prevEnd--;
-              newEnd--;
-            }
-
-            const added = sanitized.slice(start, newEnd + 1);
-            for (const ch of added) {
-              console.log({ key: ch, context: "decree" });
-            }
-          }
-
-          setNewD(sanitized);
+          if (e.target.value.length > CHAR_LIMIT) return;
+          setNewD(e.target.value);
         }}
         onKeyDown={(e) => {
-          if (e.key === " " || e.code === "Space") {
-            console.log({ key: "space", context: "decree" });
-          } else if (e.key === "Enter") {
-            console.log({ key: "return", context: "decree" });
-            e.preventDefault();
-          }
+          if (newD.length >= CHAR_LIMIT) return;
+          handleKeyInput(e, "thought");
         }}
         className="min-h-[140px] mb-4"
         disabled={disabled}
       />
       <div className="flex gap-2 justify-end">
-       
+
         <Button
           onClick={() => {
             if (!newD.trim()) return;

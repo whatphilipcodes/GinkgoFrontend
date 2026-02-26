@@ -1,9 +1,10 @@
-import { useWebSocket, type InputLang } from "@/hooks/useWebSocket";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import type { InputLang }  from "@/lib/types"
 import { useEffect, useMemo, useRef, useState } from "react";
 import FloatingPrompts from "@/components/FloatingPrompts";
-import PromptScreen from "@/components/PromptScreen";
-import FinalScreen from "@/components/FinalScreen";
-import Database from "@/components/Database";
+import ScreenCreateThought from "@/components/ScreenCreateThought";
+import ScreenCreatePrompt from "@/components/ScreenCreatePrompt";
+import ScreenCreateDecree from "@/components/ScreenCreateDecree";
 
 // —— Types ————————————————————————————————————————————————
 type Lang = "en" | "de";
@@ -537,9 +538,9 @@ const showRejectionMessage = (context: "thought" | "prompt" | "decree") => {
 
 {page !== "idle" && selected && (
   <>
-    {/* —— PromptScreen —— */}
+    {/* —— ScreenCreateThought —— */}
     {lastAnswer.trim() === "" && (
-      <PromptScreen
+      <ScreenCreateThought
         uiLang={uiLang}
         prompt={{
           id: selected.id,
@@ -606,7 +607,7 @@ const showRejectionMessage = (context: "thought" | "prompt" | "decree") => {
 
     {/* Conditional UI below */}
     {finalMode === "prompt" && (
-      <FinalScreen
+      <ScreenCreatePrompt
         uiLang={uiLang}
         answer={lastAnswer}
         onLeavePrompt={handleAddPromptWithModal}
@@ -616,7 +617,7 @@ const showRejectionMessage = (context: "thought" | "prompt" | "decree") => {
     )}
 
     {finalMode === "decree" && (
-      <Database
+      <ScreenCreateDecree
         uiLang={uiLang}
         answer={lastAnswer}
         onLeavePrompt={handleAddDecreeWithModal}

@@ -3,20 +3,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import { CHAR_LIMIT } from "@/config";
+import { handleKeyInput } from "@/lib/utils";
 
 type Phase = "form" | "send";
 
-export default function PromptScreen({
+export default function ScreenCreateThought({
   uiLang,
   prompt,
   //  hasAnswered = false, // default false
   onSubmit,
   onBack,
-  onRejection,
+  // onRejection,
 }: {
   uiLang: "en" | "de";
   prompt?: { id: string; text: string } | null;
-    hasAnswered?: boolean; // ← add this
+  hasAnswered?: boolean; // ← add this
   onSubmit: (answer: string) => void;
   onBack: () => void;
   onRejection: () => void;
@@ -87,46 +88,12 @@ export default function PromptScreen({
                 placeholder={t.placeholder}
                 value={answer}
                 onChange={(e) => {
-                  const raw = e.target.value;
-                  // Allow letters A-Z/a-z, German chars (äöüß), numbers 0-9, and spaces. Strip anything else.
-                  const sanitized = raw.replace(/[^A-Za-zäöüßÄÖÜ0-9 ]/g, "");
-                  // Enforce character limit
-                  if (sanitized.length > CHAR_LIMIT) return;
-                  const prev = answer;
-
-                  if (sanitized.length > prev.length) {
-                    let start = 0;
-                    while (start < prev.length && prev[start] === sanitized[start]) {
-                      start++;
-                    }
-
-                    let prevEnd = prev.length - 1;
-                    let newEnd = sanitized.length - 1;
-                    while (prevEnd >= start && prev[prevEnd] === sanitized[newEnd]) {
-                      prevEnd--;
-                      newEnd--;
-                    }
-
-                    const added = sanitized.slice(start, newEnd + 1);
-                    for (const ch of added) {
-                      console.log({ key: ch, context: "thought" });
-                    }
-                  }
-
-                  // Update state with sanitized value (blocks non-letters)
-                  setAnswer(sanitized);
+                  if (e.target.value.length > CHAR_LIMIT) return;
+                  setAnswer(e.target.value);
                 }}
                 onKeyDown={(e) => {
-                  // Space: log but allow insertion
-                  if (e.key === " " || e.code === "Space") {
-                    console.log({ key: "space" });
-                    // do not preventDefault so space is inserted
-                  } else if (e.key === "Enter") {
-                    // Enter should submit the form (prevent newline)
-                    console.log({ key: "return" });
-                    e.preventDefault();
-                    
-                  }
+                  if (answer.length >= CHAR_LIMIT) return;
+                  handleKeyInput(e, "thought");
                 }}
                 className="min-h-[180px] mb-4"
               />
@@ -143,8 +110,6 @@ export default function PromptScreen({
                 <Button onClick={handleSubmit} disabled={!answer.trim()}>
                   {t.submit}
                 </Button>
-            
-
               </div>
             </div>
           </motion.div>

@@ -24,7 +24,7 @@ export default function FloatingQuestions({
   }, [questions]);
 
   return (
-    <div className="relative w-full h-[70vh] overflow-hidden">
+    <div className="relative w-full h-[70vh] FUCK YOU! babaluga">
       {items.map((it) => (
         <button
           key={it.q.id}
