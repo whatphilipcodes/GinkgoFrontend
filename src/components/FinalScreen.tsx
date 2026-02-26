@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-
+import { CHAR_LIMIT } from "@/config";
 export default function FinalScreen({
   uiLang,
   // answer,
@@ -20,14 +20,14 @@ export default function FinalScreen({
   const I18N = {
     en: {
       title: "Your Input",
-      leave: "Leave a new prompt for others (Max 400 characters)",
+      leave: `Leave a new prompt for others (Max ${CHAR_LIMIT} characters)`,
       placeholder: "Write a prompt to add to the pile…",
       back: "Back",
       add: "Add Prompt",
     },
     de: {
       title: "Deine Eingabe",
-      leave: "Hinterlasse einen neuen Prompt für andere (Max. 400 Zeichen)",
+      leave: `Hinterlasse einen neuen Prompt für andere (Max. ${CHAR_LIMIT} Zeichen)`,
       placeholder: "Schreibe einen Prompt für den Stapel…",
       back: "Zurück",
       add: "Prompt hinzufügen",
@@ -38,9 +38,8 @@ export default function FinalScreen({
 
   return (
     <div
-      className={`flex flex-col items-center p-6 w-full max-w-2xl mt-8 text-center transition-opacity ${
-        disabled ? "opacity-50 pointer-events-none" : "opacity-100"
-      }`}
+      className={`flex flex-col items-center p-6 w-full max-w-2xl mt-8 text-center transition-opacity ${disabled ? "opacity-50 pointer-events-none" : "opacity-100"
+        }`}
     >
       {/* <h1 className="text-3xl font-semibold mb-2">{t.title}</h1>
       <div className="bg-white/5 p-4 rounded text-sm mb-6">{answer}</div> */}
@@ -53,8 +52,8 @@ export default function FinalScreen({
           const raw = e.target.value;
           // Allow letters A-Z/a-z, German chars (äöüß), numbers 0-9, and spaces. Strip anything else.
           const sanitized = raw.replace(/[^A-Za-zäöüßÄÖÜ0-9 ]/g, "");
-          // Enforce 400 character limit
-          if (sanitized.length > 400) return;
+          // Enforce character limit
+          if (sanitized.length > CHAR_LIMIT) return;
           const prev = newP;
 
           if (sanitized.length > prev.length) {
@@ -90,7 +89,7 @@ export default function FinalScreen({
         disabled={disabled}
       />
       <div className="flex gap-2 justify-end">
-     
+
         <Button
           onClick={() => {
             if (!newP.trim()) return;
@@ -101,7 +100,7 @@ export default function FinalScreen({
         >
           {t.add}
         </Button>
-          
+
       </div>
     </div>
   );

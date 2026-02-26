@@ -139,7 +139,7 @@ export default function FlowApp() {
   const [submittedType, setSubmittedType] = useState<"prompt" | "decree" | null>(null);
   // rejection modal state
   const [showRejectionModal, setShowRejectionModal] = useState(false);
-  const [rejectionType, setRejectionType] = useState<"opinion" | "prompt" | "decree" | null>(null);
+  const [rejectionType, setRejectionType] = useState<"thought" | "prompt" | "decree" | null>(null);
 
 
 
@@ -409,7 +409,7 @@ const handleAddDecreeWithModal = (text: string) => {
 };
 
 // Callback to show rejection modal from textarea components
-const showRejectionMessage = (context: "opinion" | "prompt" | "decree") => {
+const showRejectionMessage = (context: "thought" | "prompt" | "decree") => {
   setRejectionType(context);
   setShowRejectionModal(true);
   setTimeout(() => {
@@ -553,7 +553,7 @@ const showRejectionMessage = (context: "opinion" | "prompt" | "decree") => {
         }}
         onBack={goHome}
         hasAnswered={false}
-        onRejection={() => showRejectionMessage("opinion")}
+        onRejection={() => showRejectionMessage("thought")}
       />
     )}
 
@@ -649,7 +649,7 @@ const showRejectionMessage = (context: "opinion" | "prompt" | "decree") => {
     <div className="bg-neutral-900 p-6 rounded-xl max-w-sm text-center text-white">
       <h2 className="text-xl font-semibold mb-4 text-red-400">Content Rejected</h2>
       <p className="mb-6">
-        Your {rejectionType === "opinion" ? "response" : rejectionType} contains inappropriate content or hate speech and cannot be submitted.
+        Your {rejectionType === "thought" ? "response" : rejectionType} contains inappropriate content or hate speech and cannot be submitted.
       </p>
       <button
         onClick={() => {

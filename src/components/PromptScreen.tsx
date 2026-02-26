@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
+import { CHAR_LIMIT } from "@/config";
 
 type Phase = "form" | "send";
 
@@ -36,14 +37,14 @@ export default function PromptScreen({
   const I18N = {
     en: {
       shareTitle: "Share your voice",
-      shareHint: "Share your thoughts below. Once you have contributed to this democracy you will be able to leave a prompt for other participants or add a decree that will shape this democracy (Max 400 characters).",
+      shareHint: `Share your thoughts below. Once you have contributed to this democracy you will be able to leave a prompt for other participants or add a decree that will shape this democracy (Max ${CHAR_LIMIT} characters).`,
       placeholder: "I think…",
       back: "Back",
       submit: "Submit",
     },
     de: {
       shareTitle: "Teile deine Stimme",
-      shareHint: "Schreibe deine Meinung hier unten (Max. 400 Zeichen)",
+      shareHint: `Schreibe deine Meinung hier unten (Max. ${CHAR_LIMIT} Zeichen)`,
       placeholder: "Ich denke…",
       back: "Zurück",
       submit: "Absenden",
@@ -89,8 +90,8 @@ export default function PromptScreen({
                   const raw = e.target.value;
                   // Allow letters A-Z/a-z, German chars (äöüß), numbers 0-9, and spaces. Strip anything else.
                   const sanitized = raw.replace(/[^A-Za-zäöüßÄÖÜ0-9 ]/g, "");
-                  // Enforce 400 character limit
-                  if (sanitized.length > 400) return;
+                  // Enforce character limit
+                  if (sanitized.length > CHAR_LIMIT) return;
                   const prev = answer;
 
                   if (sanitized.length > prev.length) {
@@ -108,7 +109,7 @@ export default function PromptScreen({
 
                     const added = sanitized.slice(start, newEnd + 1);
                     for (const ch of added) {
-                      console.log({ key: ch, context: "opinion" });
+                      console.log({ key: ch, context: "thought" });
                     }
                   }
 

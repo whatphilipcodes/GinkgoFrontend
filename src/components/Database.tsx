@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { CHAR_LIMIT } from "@/config";
 
 export default function Database({
   uiLang,
@@ -20,14 +21,14 @@ export default function Database({
   const I18N = {
     en: {
       title: "Your Input",
-      leave: "Leave a decree that will shape this democracy (Max 400 characters)",
+      leave: `Leave a decree that will shape this democracy (Max ${CHAR_LIMIT} characters)`,
       placeholder: "Your decree will be used to make up the foundation of this democracy, add wisely",
       back: "Back",
       add: "Add Decree",
     },
     de: {
       title: "Deine Eingabe",
-      leave: "Hinterlasse ein Dekret für andere (Max. 400 Zeichen)",
+      leave: `Hinterlasse ein Dekret für andere (Max. ${CHAR_LIMIT} Zeichen)`,
       placeholder: "Schreibe ein Dekret für den Stapel…",
       back: "Zurück",
       add: "Dekret hinzufügen",
@@ -53,8 +54,8 @@ export default function Database({
           const raw = e.target.value;
           // Allow letters A-Z/a-z, German chars (äöüß), numbers 0-9, and spaces. Strip anything else.
           const sanitized = raw.replace(/[^A-Za-zäöüßÄÖÜ0-9 ]/g, "");
-          // Enforce 400 character limit
-          if (sanitized.length > 400) return;
+          // Enforce character limit
+          if (sanitized.length > CHAR_LIMIT) return;
           const prev = newD;
 
           if (sanitized.length > prev.length) {
