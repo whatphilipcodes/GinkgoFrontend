@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import LanguageToggle from "@/components/LanguageToggle";
 import RejectionModal from "@/components/RejectionModal";
 import SubmissionModal from "@/components/SubmissionModal";
@@ -10,6 +10,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { usePromptSocket } from "@/hooks/usePromptSocket";
 import { useVisiblePrompts } from "@/hooks/useVisiblePrompts";
 import { promptText } from "@/screens/promptUtils";
+import { REJECTION_MODAL_TIMEOUT_MS } from "@/config";
 import type { Prompt } from "@/lib/types";
 
 const STORAGE_LANG_KEY = "uiLang";
@@ -42,13 +43,6 @@ export default function FlowApp() {
 
   const { visiblePrompts, refresh } = useVisiblePrompts(page, allPrompts);
   const displayPrompts = useMemo(() => makeDisplayPrompts(visiblePrompts, uiLang), [visiblePrompts, uiLang]);
-
-  // Ensure we never render a blank screen if the selection is cleared while not on the idle page.
-  useEffect(() => {
-    if (page !== "idle" && !selected) {
-      setPage("idle");
-    }
-  }, [page, selected]);
 
   const goHome = () => {
     reset();
@@ -98,12 +92,6 @@ export default function FlowApp() {
       setSubmittedType(null);
       return;
     }
-
-    setTimeout(() => {
-      setShowSubmissionModal(false);
-      setSubmittedType(null);
-      goHome();
-    }, 800);
   };
 
   const showRejection = (ctx: RejectionContext) => {
@@ -112,7 +100,7 @@ export default function FlowApp() {
     setTimeout(() => {
       setShowRejectionModal(false);
       setRejectionType(null);
-    }, 4000);
+    }, REJECTION_MODAL_TIMEOUT_MS);
   };
 
   return (
@@ -169,7 +157,7 @@ export default function FlowApp() {
           )
         )}
 
-        <SubmissionModal isOpen={showSubmissionModal} type={submittedType} onClose={() => { setShowSubmissionModal(false); setSubmittedType(null); }} />
+        <SubmissionModal isOpen={showSubmissionModal} type={submittedType} onClose={() => { setShowSubmissionModal(false); setSubmittedType(null); goHome(); }} />
         <RejectionModal isOpen={showRejectionModal} context={rejectionType} onClose={() => { setShowRejectionModal(false); setRejectionType(null); }} />
       </div>
     </main>
