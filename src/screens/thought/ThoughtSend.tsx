@@ -6,7 +6,11 @@ interface ThoughtSendProps {
   onDone: () => void;
 }
 
-export function ThoughtSend({ answer, flyY, onDone }: ThoughtSendProps) {
+export function ThoughtSend({
+  //answer,
+  flyY,
+  onDone
+}: ThoughtSendProps) {
   return (
     <motion.div
       key="send"
