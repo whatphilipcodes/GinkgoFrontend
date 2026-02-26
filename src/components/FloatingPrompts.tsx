@@ -1,17 +1,18 @@
 import { useMemo } from "react";
+import type { Prompt } from "@/lib/types";
 
-type Prompt = {
+type DisplayPrompt = {
   id: string;
   text: string;
-  q: any; // original prompt object kept by parent
+  q: Prompt;
 };
 
 export default function FloatingPrompts({
   prompts,
   onSelect,
 }: {
-  prompts: Prompt[];
-  onSelect: (p: Prompt) => void;
+  prompts: DisplayPrompt[];
+  onSelect: (p: DisplayPrompt) => void;
 }) {
   const items = useMemo(() => {
     return prompts.map((p, i) => {
