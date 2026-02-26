@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CHAR_LIMIT } from "@/config";
 import { handleKeyInput } from "@/lib/utils";
 import type { InputLang } from "@/lib/types";
-import { THOUGHT_COPY } from "./copy";
+import { THOUGHT_COPY } from "@/screens/thought/copy";
 
 interface ThoughtFormProps {
   uiLang: InputLang;

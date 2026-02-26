@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Prompt } from "@/lib/types";
-import { pickRandom } from "@/screens/flow/promptUtils";
+import { pickRandom } from "@/screens/promptUtils";
 
 interface VisiblePromptsResult {
   visiblePrompts: Prompt[];

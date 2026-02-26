@@ -2,14 +2,14 @@ import { useMemo, useState } from "react";
 import LanguageToggle from "@/components/LanguageToggle";
 import RejectionModal from "@/components/RejectionModal";
 import SubmissionModal from "@/components/SubmissionModal";
-import FinalStep, { type FinalMode } from "@/screens/flow/FinalStep";
-import IdleScreen, { type DisplayPrompt, makeDisplayPrompts } from "@/screens/flow/IdleScreen";
-import ThoughtScreen from "@/screens/flow/ThoughtScreen";
+import FinalStep, { type FinalMode } from "@/screens/FinalStep";
+import IdleScreen, { type DisplayPrompt, makeDisplayPrompts } from "@/screens/IdleScreen";
+import ThoughtScreen from "@/screens/ThoughtScreen";
 import { useInactivity } from "@/hooks/useInactivity";
 import { useLanguage } from "@/hooks/useLanguage";
 import { usePromptSocket } from "@/hooks/usePromptSocket";
 import { useVisiblePrompts } from "@/hooks/useVisiblePrompts";
-import { promptText } from "@/screens/flow/promptUtils";
+import { promptText } from "@/screens/promptUtils";
 import type { Prompt } from "@/lib/types";
 
 const STORAGE_LANG_KEY = "uiLang";

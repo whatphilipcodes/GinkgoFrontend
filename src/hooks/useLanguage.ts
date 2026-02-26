@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { UILang } from "@/lib/types";
-import { makeTranslator } from "@/screens/flow/uiCopy";
+import { makeTranslator } from "@/screens/uiCopy";
 
 export function useLanguage(storageKey: string) {
   const [uiLang, setUiLang] = useState<UILang>(() => {

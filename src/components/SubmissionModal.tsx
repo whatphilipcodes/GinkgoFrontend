@@ -1,4 +1,4 @@
-import type { FinalMode } from "@/screens/flow/FinalStep";
+import type { FinalMode } from "@/screens/FinalStep";
 
 interface SubmissionModalProps {
   isOpen: boolean;

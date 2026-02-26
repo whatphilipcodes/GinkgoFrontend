@@ -1,6 +1,6 @@
 import FloatingPrompts from "@/components/FloatingPrompts";
 import type { InputLang, Prompt } from "@/lib/types";
-import { promptText } from "./promptUtils";
+import { promptText } from "@/screens/promptUtils";
 
 export type DisplayPrompt = {
   id: string;

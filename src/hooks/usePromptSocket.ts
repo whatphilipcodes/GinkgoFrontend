@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import type { InputLang, InputRecord, Prompt, SeedPrompt, UserPrompt } from "@/lib/types";
-import { fakeSeeds, fakeUsers } from "@/screens/flow/fakePrompts";
-import { groupSeedPrompts, mapUserPrompts } from "@/screens/flow/promptUtils";
+import { fakeSeeds, fakeUsers } from "@/screens/fakePrompts";
+import { groupSeedPrompts, mapUserPrompts } from "@/screens/promptUtils";
 
 const QUERY_LIMIT = 100;
 

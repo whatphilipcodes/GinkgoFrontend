@@ -1,5 +1,5 @@
-import ScreenCreateDecree from "@/screens/flow/forms/CreateDecree";
-import ScreenCreatePrompt from "@/screens/flow/forms/CreatePrompt";
+import ScreenCreateDecree from "@/screens/forms/CreateDecree";
+import ScreenCreatePrompt from "@/screens/forms/CreatePrompt";
 import type { InputLang } from "@/lib/types";
 
 export type FinalMode = "prompt" | "decree" | null;

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import type { InputLang } from "@/lib/types";
-import { ThoughtForm } from "@/screens/flow/thought/ThoughtForm";
-import { ThoughtSend } from "@/screens/flow/thought/ThoughtSend";
-import { THOUGHT_COPY } from "@/screens/flow/thought/copy";
+import { ThoughtForm } from "@/screens/thought/ThoughtForm";
+import { ThoughtSend } from "@/screens/thought/ThoughtSend";
+import { THOUGHT_COPY } from "@/screens/thought/copy";
 
 interface ThoughtScreenProps {
   uiLang: InputLang;
