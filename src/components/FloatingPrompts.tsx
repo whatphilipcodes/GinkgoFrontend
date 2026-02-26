@@ -24,7 +24,7 @@ export default function FloatingPrompts({
   }, [prompts]);
 
   return (
-    <div className="relative w-full h-[70vh] overflow-hidden">
+    <div className="relative w-full h-[70vh]">
       {items.map((it) => (
         <button
           key={it.p.id}
