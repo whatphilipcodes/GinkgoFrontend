@@ -1,17 +1,18 @@
 import { useMemo } from "react";
+import type { Prompt } from "@/lib/types";
 
-type Prompt = {
+type DisplayPrompt = {
   id: string;
   text: string;
-  q: any; // original prompt object kept by parent
+  q: Prompt;
 };
 
 export default function FloatingPrompts({
   prompts,
   onSelect,
 }: {
-  prompts: Prompt[];
-  onSelect: (p: Prompt) => void;
+  prompts: DisplayPrompt[];
+  onSelect: (p: DisplayPrompt) => void;
 }) {
   const items = useMemo(() => {
     return prompts.map((p, i) => {
@@ -24,7 +25,7 @@ export default function FloatingPrompts({
   }, [prompts]);
 
   return (
-    <div className="relative w-full h-[70vh] overflow-hidden">
+    <div className="relative w-full h-[70vh]">
       {items.map((it) => (
         <button
           key={it.p.id}
