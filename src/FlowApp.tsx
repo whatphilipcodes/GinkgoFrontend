@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import LanguageToggle from "@/components/LanguageToggle";
 import RejectionModal from "@/components/RejectionModal";
 import SubmissionModal from "@/components/SubmissionModal";
@@ -42,7 +42,16 @@ export default function FlowApp() {
   });
 
   const { visiblePrompts, refresh } = useVisiblePrompts(page, allPrompts);
-  const displayPrompts = useMemo(() => makeDisplayPrompts(visiblePrompts, uiLang), [visiblePrompts, uiLang]);
+  const displayPrompts = useMemo(() => makeDisplayPrompts(visiblePrompts), [visiblePrompts]);
+
+  const refreshPromptsFromDb = useCallback(async () => {
+    setIsWaiting(true);
+    try {
+      await refreshPrompts();
+    } finally {
+      setIsWaiting(false);
+    }
+  }, [refreshPrompts]);
 
   const goHome = () => {
     reset();
@@ -123,7 +132,7 @@ export default function FlowApp() {
             hint={t("idle_hint")}
             prompts={displayPrompts}
             onSelect={selectPrompt}
-            onRefresh={() => { refresh(); refreshPrompts(); }}
+            onRefresh={() => { void refreshPromptsFromDb(); }}
             refreshLabel={t("refresh")}
           />
         )}
@@ -132,7 +141,7 @@ export default function FlowApp() {
           lastAnswer.trim() === "" ? (
             <ThoughtScreen
               uiLang={uiLang}
-              prompt={{ id: selected.id, text: promptText(selected, uiLang) }}
+              prompt={{ id: selected.id, text: promptText(selected) }}
               onSubmit={submitThought}
               onBack={goHome}
               onRejection={() => showRejection("thought")}

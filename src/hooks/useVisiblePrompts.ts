@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { AMOUNT_PROMPTS_SHOWN } from "@/config";
 import type { Prompt } from "@/lib/types";
 import { pickRandom } from "@/screens/promptUtils";
 
@@ -13,7 +14,7 @@ export function useVisiblePrompts(page: "idle" | "ask" | "final", prompts: Promp
 
   const visiblePrompts = useMemo(() => {
     if (page !== "idle") return [];
-    const N = 10;
+    const N = AMOUNT_PROMPTS_SHOWN;
     const tries = 10;
     let best: Prompt[] = [];
     let bestOverlap = Number.POSITIVE_INFINITY;

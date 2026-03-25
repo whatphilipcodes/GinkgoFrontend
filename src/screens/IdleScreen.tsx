@@ -1,5 +1,5 @@
 import FloatingPrompts from "@/components/FloatingPrompts";
-import type { InputLang, Prompt } from "@/lib/types";
+import type { Prompt } from "@/lib/types";
 import { promptText } from "@/screens/promptUtils";
 
 export type DisplayPrompt = {
@@ -17,8 +17,8 @@ interface IdleScreenProps {
   refreshLabel: string;
 }
 
-export function makeDisplayPrompts(prompts: Prompt[], lang: InputLang): DisplayPrompt[] {
-  return prompts.map((p) => ({ id: p.id, q: p, text: promptText(p, lang) }));
+export function makeDisplayPrompts(prompts: Prompt[]): DisplayPrompt[] {
+  return prompts.map((p) => ({ id: p.id, q: p, text: promptText(p) }));
 }
 
 export default function IdleScreen({

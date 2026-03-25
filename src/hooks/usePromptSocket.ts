@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { ADD_ENTRY_TIMEOUT_MS } from "@/config";
 import type {
@@ -6,13 +6,10 @@ import type {
   InputRecord,
   InputType,
   Prompt,
-  SeedPrompt,
-  UserPrompt,
   WebSocketResponse,
 } from "@/lib/types";
-import { groupSeedPrompts, mapUserPrompts } from "@/screens/promptUtils";
-
-const QUERY_LIMIT = 100;
+import { mapPrompts } from "@/screens/promptUtils";
+import { QUERY_LIMIT } from "@/config";
 
 interface PromptSocket {
   allPrompts: Prompt[];
@@ -28,8 +25,7 @@ interface PromptSocketOptions {
 }
 
 export function usePromptSocket(options?: PromptSocketOptions): PromptSocket {
-  const [seedPrompts, setSeedPrompts] = useState<SeedPrompt[]>([]);
-  const [userPrompts, setUserPrompts] = useState<UserPrompt[]>([]);
+  const [allPrompts, setAllPrompts] = useState<Prompt[]>([]);
 
   const refreshPromptsRef = useRef<() => Promise<WebSocketResponse | null>>(async () => null);
 
@@ -54,10 +50,7 @@ export function usePromptSocket(options?: PromptSocketOptions): PromptSocket {
         Array.isArray(response.records)
       ) {
         const records = response.records as InputRecord[];
-        const seeds = records.filter((r) => r.source === "seed");
-        const audience = records.filter((r) => r.source !== "seed");
-        setSeedPrompts(groupSeedPrompts(seeds));
-        setUserPrompts(mapUserPrompts(audience));
+        setAllPrompts(mapPrompts(records));
         return;
       }
 
@@ -73,7 +66,7 @@ export function usePromptSocket(options?: PromptSocketOptions): PromptSocket {
   const refreshPrompts = useCallback(async () => {
     try {
       return await sendAndWait(
-        { action: "query", type: "prompt", query_type: "all", filters: { limit: QUERY_LIMIT, offset: 0 } },
+        { action: "query", type: "prompt", query_type: "all", filters: { limit: QUERY_LIMIT, offset: 0, recent: true } },
         (resp) => resp.type === "prompt" && resp.action === "query",
       );
     } catch {
@@ -111,11 +104,6 @@ export function usePromptSocket(options?: PromptSocketOptions): PromptSocket {
   const sendKeystroke = useCallback(
     (key: string, context: InputType) => send({ action: "send", type: "keystroke", key, context }),
     [send],
-  );
-
-  const allPrompts = useMemo<Prompt[]>(
-    () => [...userPrompts, ...seedPrompts],
-    [userPrompts, seedPrompts],
   );
 
   return { allPrompts, addEntry, refreshPrompts, wsError, isConnected, sendKeystroke };

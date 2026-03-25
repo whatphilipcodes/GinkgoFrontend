@@ -24,20 +24,12 @@ export interface InputRecord {
 // UI / frontend helper types
 export type UILang = InputLang;
 
-export interface SeedPrompt {
-	id: string;
-	text: Record<InputLang, string>;
-	source: "seed";
-}
-
-export interface UserPrompt {
+export interface Prompt {
 	id: string;
 	text: string;
 	lang: InputLang;
 	source: InputSource;
 }
-
-export type Prompt = SeedPrompt | UserPrompt;
 
 // Thought commands
 export interface AddThoughtCommand {

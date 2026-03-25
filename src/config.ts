@@ -4,3 +4,5 @@ export const REQUEST_TIMEOUT_MS = 120_000
 export const INACTIVITY_TIMEOUT_MS = 120_000
 export const ADD_ENTRY_TIMEOUT_MS = 120_000
 export const REJECTION_MODAL_TIMEOUT_MS = 120_000
+export const AMOUNT_PROMPTS_SHOWN = 10
+export const QUERY_LIMIT = 100
