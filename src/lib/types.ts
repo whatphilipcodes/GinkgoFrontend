@@ -38,6 +38,7 @@ export interface AddThoughtCommand {
 	text: string;
 	lang: InputLang;
 	source: InputSource;
+	prompt_id: number;
 }
 
 export interface QueryThoughtCommand {

@@ -72,7 +72,7 @@ export default function FlowApp() {
   const submitThought = async (text: string) => {
     reset();
     setIsWaiting(true);
-    const resp = await addEntry("thought", text, uiLang);
+    const resp = await addEntry("thought", text, uiLang, Number(selected?.id));
     setIsWaiting(false);
 
     if (!resp || resp.status === "error") {

@@ -13,7 +13,7 @@ import { QUERY_LIMIT } from "@/config";
 
 interface PromptSocket {
   allPrompts: Prompt[];
-  addEntry: (type: "thought" | "prompt" | "decree", text: string, lang: InputLang) => Promise<WebSocketResponse | null>;
+  addEntry: (type: "thought" | "prompt" | "decree", text: string, lang: InputLang, promptId?: number) => Promise<WebSocketResponse | null>;
   refreshPrompts: () => Promise<WebSocketResponse | null>;
   wsError?: string | null;
   isConnected: boolean;
@@ -83,13 +83,20 @@ export function usePromptSocket(options?: PromptSocketOptions): PromptSocket {
     refreshPrompts();
   }, [isConnected, refreshPrompts]);
 
-  const addEntry = async (type: "thought" | "prompt" | "decree", text: string, lang: InputLang) => {
+  const addEntry = async (type: "thought" | "prompt" | "decree", text: string, lang: InputLang, promptId?: number) => {
     const trimmed = text.trim();
     if (!trimmed) return null;
+    let command;
+    if (type === "thought") {
+      if (typeof promptId !== "number" || !Number.isInteger(promptId)) return null;
+      command = { action: "add" as const, text: trimmed, type, lang, source: "audience" as const, prompt_id: promptId };
+    } else {
+      command = { action: "add" as const, text: trimmed, type, lang, source: "audience" as const };
+    }
 
     try {
       const resp = await sendAndWait(
-        { action: "add", text: trimmed, type, lang, source: "audience" },
+        command,
         (r) => r.action === "add" && r.type === type,
         ADD_ENTRY_TIMEOUT_MS,
       );
