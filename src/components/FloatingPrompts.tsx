@@ -30,7 +30,7 @@ export default function FloatingPrompts({
         <button
           key={it.p.id}
           onClick={() => onSelect(it.p)}
-          className="floating-prompt absolute px-3 py-1 bg-white/10 backdrop-blur rounded-full text-sm text-white/90 hover:scale-105 focus:outline-none"
+          className="floating-prompt absolute px-6 py-3 bg-white/10 backdrop-blur rounded-full text-md text-white/90 hover:scale-105 hover:z-10 focus:outline-none"
           style={{
             top: it.top,
             left: it.left,

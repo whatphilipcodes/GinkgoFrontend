@@ -32,7 +32,7 @@ export function ThoughtForm({ uiLang, promptText, answer, onChange, onSubmit, on
         />
         <div className="flex gap-2 justify-end">
           <Button variant="ghost" onClick={onBack} className="text-neutral-300">{t.back}</Button>
-          <Button onClick={onSubmit} disabled={!answer.trim()}>{t.submit}</Button>
+          <Button onClick={onSubmit} disabled={!answer.trim()} className={answer.trim() ? "bg-white/20 border-white/40" : "bg-white/5 border-white/20 hover:bg-white/10"}>{t.submit}</Button>
         </div>
       </div>
     </motion.div>

@@ -13,12 +13,12 @@ export default function SubmissionModal({ isOpen, type, onClose }: SubmissionMod
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-neutral-900 p-6 rounded-xl max-w-sm text-center text-white">
         <h2 className="text-xl font-semibold mb-4">
-          {type === "prompt" ? "Prompt submitted!" : "Decree submitted!"}
+          {type === "prompt" ? "Question submitted!" : "Value submitted!"}
         </h2>
         <p className="mb-6">
           {type === "prompt"
-            ? "Thank you for leaving a prompt. It will be shown to the next visitor."
-            : "Thank you for adding a decree. It will help shape this democracy."}
+            ? "Thank you for leaving a question. It will be shown to the next visitor."
+            : "Thank you for adding a value. It will help shape this democracy."}
         </p>
         <button
           onClick={onClose}

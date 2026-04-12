@@ -7,14 +7,14 @@ import type { InputLang, InputType } from "@/lib/types";
 
 const COPY = {
   en: {
-    leave: `Leave a new prompt for others (Max ${CHAR_LIMIT} characters)`,
-    placeholder: "Write a prompt to add to the pile…",
-    add: "Add Prompt",
+    leave: `Leave a new question for others (Max ${CHAR_LIMIT} characters)`,
+    placeholder: "Write a question to add to the pile…",
+    add: "Add Question",
   },
   de: {
-    leave: `Hinterlasse einen neuen Prompt für andere (Max. ${CHAR_LIMIT} Zeichen)`,
-    placeholder: "Schreibe einen Prompt für den Stapel…",
-    add: "Prompt hinzufügen",
+    leave: `Hinterlasse eine neue Frage für andere (Max. ${CHAR_LIMIT} Zeichen)`,
+    placeholder: "Schreibe eine Frage für den Stapel…",
+    add: "Frage hinzufügen",
   },
 } as const;
 
@@ -53,6 +53,7 @@ export default function CreatePrompt({ uiLang, onLeavePrompt, disabled, onKeystr
             setValue("");
           }}
           disabled={disabled || submitting || !value.trim()}
+          className={value.trim() && !disabled && !submitting ? "bg-white/20 border-white/40" : "bg-white/5 border-white/20 hover:bg-white/10"}
         >
           {t.add}
         </Button>

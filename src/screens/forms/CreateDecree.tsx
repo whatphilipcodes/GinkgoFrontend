@@ -7,14 +7,14 @@ import type { InputLang, InputType } from "@/lib/types";
 
 const COPY = {
   en: {
-    leave: `Leave a decree that will shape this democracy (Max ${CHAR_LIMIT} characters)`,
-    placeholder: "Your decree will be used to make up the foundation of this democracy, add wisely",
-    add: "Add Decree",
+    leave: `Leave a value that will shape this democracy (Max ${CHAR_LIMIT} characters)`,
+    placeholder: "Your value will be used to make up the foundation of this democracy, add wisely",
+    add: "Add Value",
   },
   de: {
-    leave: `Hinterlasse ein Dekret für andere (Max. ${CHAR_LIMIT} Zeichen)`,
-    placeholder: "Schreibe ein Dekret für den Stapel…",
-    add: "Dekret hinzufügen",
+    leave: `Hinterlasse einen Wert für andere (Max. ${CHAR_LIMIT} Zeichen)`,
+    placeholder: "Schreibe einen Wert für den Stapel…",
+    add: "Wert hinzufügen",
   },
 } as const;
 
@@ -53,6 +53,7 @@ export default function CreateDecree({ uiLang, onLeavePrompt, disabled, onKeystr
             setValue("");
           }}
           disabled={disabled || submitting || !value.trim()}
+          className={value.trim() && !disabled && !submitting ? "bg-white/20 border-white/40" : "bg-white/5 border-white/20 hover:bg-white/10"}
         >
           {t.add}
         </Button>

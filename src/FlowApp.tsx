@@ -113,7 +113,7 @@ export default function FlowApp() {
   };
 
   return (
-    <main className="min-h-screen p-6 bg-gradient-to-b from-neutral-900 to-neutral-800 text-white" onClick={reset} onKeyDown={reset}>
+    <main className="min-h-screen p-6  text-white" onClick={reset} onKeyDown={reset}>
       <div className="max-w-4xl mx-auto">
         <nav className="flex items-center justify-between mb-8">
           <div className="w-[140px]" />
