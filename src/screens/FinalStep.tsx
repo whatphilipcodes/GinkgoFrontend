@@ -12,7 +12,7 @@ interface FinalStepProps {
   onAddPrompt: (text: string) => Promise<void> | void;
   onAddDecree: (text: string) => Promise<void> | void;
   onSkip: () => void;
-  onRejection: (context: "question" | "value") => void;
+  onRejection: (context: "prompt" | "decree") => void;
   onKeystroke?: (key: string, context: InputType) => boolean | void;
   title: string;
   hint: string;
