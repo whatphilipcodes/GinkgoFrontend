@@ -94,6 +94,13 @@ export function useWebSocket(
       socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data) as WebSocketResponse;
+          
+          // Ignore keepalive ping messages from server
+          if (data.type === "ping") {
+            if (DEBUG_WS) console.log("[ws] recv (ping - ignored)");
+            return;
+          }
+          
           if (DEBUG_WS) console.log("[ws] recv", data);
 
           // resolve the first waiter that matches

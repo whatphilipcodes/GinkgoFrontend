@@ -11,13 +11,11 @@ import { usePromptSocket } from "@/hooks/usePromptSocket";
 import { useVisiblePrompts } from "@/hooks/useVisiblePrompts";
 import { promptText } from "@/screens/promptUtils";
 import { REJECTION_MODAL_TIMEOUT_MS } from "@/config";
-import type { Prompt } from "@/lib/types";
+import type { InputType, Prompt } from "@/lib/types";
 
 const STORAGE_LANG_KEY = "uiLang";
 
 type Page = "idle" | "ask" | "final";
-
-type RejectionContext = "thought" | "prompt" | "decree" | null;
 
 export default function FlowApp() {
   const { uiLang, setUiLang, t } = useLanguage(STORAGE_LANG_KEY);
@@ -31,7 +29,7 @@ export default function FlowApp() {
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const [submittedType, setSubmittedType] = useState<Exclude<FinalMode, null> | null>(null);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
-  const [rejectionType, setRejectionType] = useState<RejectionContext>(null);
+  const [rejectionType, setRejectionType] = useState<InputType | null>(null);
   const [isWaiting, setIsWaiting] = useState(false);
 
   const { reset } = useInactivity(() => {
@@ -103,7 +101,7 @@ export default function FlowApp() {
     }
   };
 
-  const showRejection = (ctx: RejectionContext) => {
+  const showRejection = (ctx: InputType | null) => {
     setRejectionType(ctx);
     setShowRejectionModal(true);
     setTimeout(() => {

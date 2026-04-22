@@ -1,4 +1,4 @@
-export type InputType = "thought" | "prompt" | "decree";
+export type InputType = "thought" | "prompt" | "decree" | "ping";
 export type InputLang = "en" | "de";
 export type InputSource = "seed" | "audience";
 export type InputContext = InputType;

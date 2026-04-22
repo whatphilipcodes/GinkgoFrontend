@@ -1,6 +1,8 @@
+import type { InputType } from "@/lib/types";
+
 interface RejectionModalProps {
   isOpen: boolean;
-  context: "thought" | "prompt" | "decree" | null;
+  context: InputType | null;
   onClose: () => void;
 }
 
